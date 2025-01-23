@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/spf13/cast"
+	"github.com/zeromicro/go-zero/core/logx"
 	"net"
 )
 
@@ -26,6 +27,8 @@ const (
 	CtxBrowserFingerprint = "browser_fingerprint"
 	// CtxCurrencyCode 币种code
 	CtxCurrencyCode = "currency_code"
+	// CtxRequestClientInfo 请求客户端信息
+	CtxRequestClientInfo = "request_client_info"
 )
 
 const (
@@ -127,4 +130,28 @@ func GetRegionFromCtx(ctx context.Context) string {
 		return region
 	}
 	return ""
+}
+
+type RequestClientInfo struct {
+	IP       string // 客户端IP地址
+	Platform string // 平台：Windows、Linux等
+	OS       string // 操作系统
+	Browser  string // 浏览器信息
+	IsMobile bool   // 是否是手机端
+}
+
+// GetRequestClientInfoFromCtx 从上下文中获取RequestClientInfo
+func GetRequestClientInfoFromCtx(ctx context.Context) *RequestClientInfo {
+	val := ctx.Value(CtxRequestClientInfo)
+	if val == nil {
+		logx.Errorf("get request client info empty")
+		return nil
+	}
+
+	info, ok := val.(RequestClientInfo)
+	if !ok {
+		logx.Errorf("invalid request client info: %+v", val)
+		return nil
+	}
+	return &info
 }
