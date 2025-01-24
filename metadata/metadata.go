@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/spf13/cast"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -55,14 +56,22 @@ func GetMetadata[T any](ctx context.Context, key any) (T, bool) {
 	if val, ok := ctx.Value(key).(T); ok {
 		return val, true
 	}
-
 	var zero T
 	return zero, false
 }
 
 // GetUidFromCtx 从上下文中获取uid
 func GetUidFromCtx(ctx context.Context) int64 {
-	return cast.ToInt64(ctx.Value(CtxJWTUserId))
+	val := ctx.Value(CtxJWTUserId)
+	if val == nil {
+		return 0
+	}
+	uidNum, ok := val.(json.Number)
+	if !ok {
+		return cast.ToInt64(uidNum)
+	}
+	uid, _ := uidNum.Int64()
+	return uid
 }
 
 // GetUsernameFromCtx 从上下文中获取username

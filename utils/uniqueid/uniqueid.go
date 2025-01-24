@@ -26,9 +26,12 @@ func init() {
 }
 
 // GenId 生成一个唯一的雪花ID
-func GenId() (id uint64, err error) {
-	id, err = flake.NextID()
-	return
+func GenId() (int64, error) {
+	id, err := flake.NextID()
+	if err != nil {
+		return 0, err
+	}
+	return int64(id), nil
 }
 
 func GenUserID() (id uint64, err error) {

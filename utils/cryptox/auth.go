@@ -1,4 +1,4 @@
-package crypto
+package cryptox
 
 import (
 	"crypto/rand"
@@ -6,7 +6,24 @@ import (
 	"fmt"
 	"golang.org/x/crypto/argon2"
 	"strings"
+	"sync"
 )
+
+var (
+	passwordConfigOnce sync.Once
+	passwordConf       *PasswordConf
+)
+
+// InitPasswordConfig 初始化密码配置
+func InitPasswordConfig(config *PasswordConf) {
+	passwordConfigOnce.Do(func() {
+		if config == nil {
+			passwordConf = DefaultConfig()
+		} else {
+			passwordConf = config
+		}
+	})
+}
 
 // PasswordConf 密码哈希配置
 type PasswordConf struct {
@@ -28,19 +45,27 @@ func DefaultConfig() *PasswordConf {
 
 // PasswordHash 密码哈希结构
 type PasswordHash struct {
-	Hash   []byte
-	Salt   []byte
-	Config *PasswordConf
+	Hash []byte
+	Salt []byte
 }
 
-// HashPassword 对密码进行哈希
-func HashPassword(password string, config *PasswordConf) (*PasswordHash, error) {
+// GetPasswordConfig 获取密码配置
+func GetPasswordConfig() *PasswordConf {
+	if passwordConf == nil {
+		InitPasswordConfig(nil)
+	}
+	return passwordConf
+}
+
+// HashPassword 使用单例配置进行哈希
+func HashPassword(password string) (*PasswordHash, error) {
 	// 生成随机盐值
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, err
 	}
 
+	config := GetPasswordConfig()
 	hash := argon2.IDKey(
 		[]byte(password),
 		salt,
@@ -51,21 +76,21 @@ func HashPassword(password string, config *PasswordConf) (*PasswordHash, error) 
 	)
 
 	return &PasswordHash{
-		Hash:   hash,
-		Salt:   salt,
-		Config: config,
+		Hash: hash,
+		Salt: salt,
 	}, nil
 }
 
 // VerifyPassword 验证密码
 func VerifyPassword(password string, ph *PasswordHash) bool {
+	config := GetPasswordConfig()
 	hash := argon2.IDKey(
 		[]byte(password),
 		ph.Salt,
-		ph.Config.Time,
-		ph.Config.Memory,
-		ph.Config.Threads,
-		ph.Config.KeyLen,
+		config.Time,
+		config.Memory,
+		config.Threads,
+		config.KeyLen,
 	)
 	return base64.StdEncoding.EncodeToString(hash) == base64.StdEncoding.EncodeToString(ph.Hash)
 }
@@ -78,7 +103,7 @@ func (ph *PasswordHash) ToString() string {
 }
 
 // FromString 从字符串还原哈希信息
-func FromString(s string, config *PasswordConf) (*PasswordHash, error) {
+func FromString(s string) (*PasswordHash, error) {
 	parts := strings.Split(s, ":")
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid hash string format")
@@ -95,8 +120,7 @@ func FromString(s string, config *PasswordConf) (*PasswordHash, error) {
 	}
 
 	return &PasswordHash{
-		Hash:   hash,
-		Salt:   salt,
-		Config: config,
+		Hash: hash,
+		Salt: salt,
 	}, nil
 }
