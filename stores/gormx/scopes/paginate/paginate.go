@@ -18,6 +18,6 @@ func Paginate(pagination *Pagination) func(db *gorm.DB) *gorm.DB {
 
 		tx.Model(db.Statement.Model).Count(&totalRows)
 		pagination.Total = totalRows
-		return db.Offset(pagination.Offset()).Limit(pagination.Limit())
+		return db.Offset(int(pagination.Offset())).Limit(int(pagination.Limit()))
 	}
 }
