@@ -6,6 +6,7 @@ import (
 	"github.com/zeromicro/go-zero/core/jsonx"
 	"github.com/zeromicro/go-zero/core/stringx"
 	"gorm.io/gorm"
+	"reflect"
 	"strings"
 )
 
@@ -30,6 +31,9 @@ func Equal2(field string, value any, apply bool) func(db *gorm.DB) *gorm.DB {
 // NotEqual 不等于
 func NotEqual(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		if isZero(value) {
+			return db
+		}
 		return db.Where(field+" != ?", value)
 	}
 }
@@ -78,6 +82,9 @@ func NotIn[T comparable](field string, value []T) func(db *gorm.DB) *gorm.DB {
 // GT 大于
 func GT(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		if isZero(value) {
+			return db
+		}
 		return db.Where(field+" > ?", value)
 	}
 }
@@ -85,6 +92,9 @@ func GT(field string, value any) func(db *gorm.DB) *gorm.DB {
 // GTE 大于等于
 func GTE(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		if isZero(value) {
+			return db
+		}
 		return db.Where(field+" >= ?", value)
 	}
 }
@@ -92,6 +102,9 @@ func GTE(field string, value any) func(db *gorm.DB) *gorm.DB {
 // LT 小于
 func LT(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		if isZero(value) {
+			return db
+		}
 		return db.Where(field+" < ?", value)
 	}
 }
@@ -99,6 +112,9 @@ func LT(field string, value any) func(db *gorm.DB) *gorm.DB {
 // LTE 小于等于
 func LTE(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		if isZero(value) {
+			return db
+		}
 		return db.Where(field+" <= ?", value)
 	}
 }
@@ -181,4 +197,26 @@ func OrderBy(field, order string) func(db *gorm.DB) *gorm.DB {
 		order = utils.Ternary(order != "", order, "asc")
 		return db.Order(field + " " + order)
 	}
+}
+
+// isZero 检查值是否为零值或空值
+func isZero(value any) bool {
+	if value == nil {
+		return true
+	}
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.String:
+		return v.String() == ""
+	case reflect.Slice, reflect.Map:
+		return v.Len() == 0
+	default:
+	}
+	return false
 }
