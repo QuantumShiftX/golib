@@ -96,7 +96,7 @@ func (s *ReCaptchaService) validateResponse(resp *ReCaptchaResponse, expectedAct
 // TwoFactorAuth 处理双因素认证
 type TwoFactorAuth struct {
 	// 可配置的参数
-	timeStep     int64     // TOTP时间步长(默认30秒)
+	timeStep     int64     // TOTP时间步长(默认60秒)
 	codeLength   uint32    // 验证码长度(默认6位)
 	windowSize   int       // 时间窗口大小(默认前后1个时间步长)
 	randomSource io.Reader // 随机数生成器,便于测试
@@ -105,7 +105,7 @@ type TwoFactorAuth struct {
 // NewTwoFactorAuth 创建新的TwoFactorAuth实例
 func NewTwoFactorAuth(opts ...TwoFactorOption) *TwoFactorAuth {
 	auth := &TwoFactorAuth{
-		timeStep:     30,
+		timeStep:     60,
 		codeLength:   6,
 		windowSize:   1,
 		randomSource: rand.Reader,

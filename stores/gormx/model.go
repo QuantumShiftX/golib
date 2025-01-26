@@ -23,8 +23,12 @@ type OperationBaseModel struct {
 func (base *OperationBaseModel) BeforeSave(tx *gorm.DB) (err error) {
 	ctx := tx.Statement.Context
 	base.OperationTime = time.Now().Unix()
-	base.OperatorID = int64(metadata.GetUidFromCtx(ctx))
-	base.Operator = metadata.GetUsernameFromCtx(ctx)
+	if base.OperatorID == 0 {
+		base.OperatorID = metadata.GetUidFromCtx(ctx)
+	}
+	if base.Operator == "" {
+		base.Operator = metadata.GetUsernameFromCtx(ctx)
+	}
 	tx.Statement.SetColumn("operation_time", base.OperationTime)
 	tx.Statement.SetColumn("operator_id", base.OperatorID)
 	tx.Statement.SetColumn("operator", base.Operator)
