@@ -76,6 +76,12 @@ func ip(fl validator.FieldLevel) bool {
 		return false
 	}
 
+	// 如果是空字符串，直接返回 true
+	if s == "" {
+		return true
+	}
+
+	// 非空时才验证 IP 格式
 	return net.ParseIP(s) != nil
 }
 
