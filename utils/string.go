@@ -1,6 +1,10 @@
 package utils
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+)
 
 // EnsureJSON 辅助函数：确保字符串是有效的JSON格式
 func EnsureJSON(str string) string {
@@ -18,4 +22,21 @@ func EnsureJSON(str string) string {
 
 	// 已经是有效的JSON，直接返回
 	return str
+}
+
+// StrTI64 全数字字符串转int64 (注:非全数字不能使用此函数,因忽略err)
+func StrTI64(str string) int64 {
+	if str == "" {
+		return 0
+	}
+
+	// 去除首尾空格
+	str = strings.TrimSpace(str)
+
+	result, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return -1
+	}
+
+	return result
 }

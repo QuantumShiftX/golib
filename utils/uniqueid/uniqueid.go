@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+const (
+	// 邀请码字符集，去掉了容易混淆的字符
+	inviteCodeChars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+	// 邀请码长度
+	inviteCodeLength = 6
+)
+
 var (
 	flake      *sonyflake.Sonyflake
 	randSource rand.Source
@@ -57,6 +64,56 @@ func GenUserID() (id uint64, err error) {
 	}
 
 	return finalID, nil
+}
+
+// GenInviteCode 根据用户ID生成邀请码
+func GenInviteCode(userID uint64) (string, error) {
+	// 生成一个雪花ID
+	sfid, err := flake.NextID()
+	if err != nil {
+		return "", fmt.Errorf("generate snowflake id failed: %v", err)
+	}
+
+	// 将雪花ID和用户ID混合
+	// 使用位运算确保数值唯一性
+	mixID := (int64(sfid) << 20) | (int64(userID) & 0xFFFFF) // 取用户ID后20位
+
+	// 创建随机数生成器
+	randGen := rand.New(randSource)
+
+	// 生成邀请码
+	var code strings.Builder
+	code.Grow(inviteCodeLength)
+
+	// 前6位使用混合ID映射
+	for i := 0; i < 6; i++ {
+		index := int(mixID % int64(len(inviteCodeChars)))
+		code.WriteByte(inviteCodeChars[index])
+		mixID /= int64(len(inviteCodeChars))
+	}
+
+	// 后2位使用随机数，增加分散度
+	for i := 0; i < 2; i++ {
+		index := randGen.Intn(len(inviteCodeChars))
+		code.WriteByte(inviteCodeChars[index])
+	}
+
+	return code.String(), nil
+}
+
+// VerifyInviteCode 验证邀请码格式
+func VerifyInviteCode(code string) bool {
+	if len(code) != inviteCodeLength {
+		return false
+	}
+
+	code = strings.ToUpper(code)
+	for _, c := range code {
+		if !strings.ContainsRune(inviteCodeChars, c) {
+			return false
+		}
+	}
+	return true
 }
 
 // 获取机器 ID 基于 Docker 环境

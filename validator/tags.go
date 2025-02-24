@@ -21,6 +21,8 @@ func registerTags() {
 	_ = validate.RegisterValidation("num_str_lt", numStrLessThan)
 	_ = validate.RegisterValidation("num_str_lte", numStrLessThanOrEqual)
 	_ = validate.RegisterValidation("two_decimal_places", float64WithTwoDecimalPlaces)
+	_ = validate.RegisterValidation("password", validatePassword)
+	_ = validate.RegisterValidation("iso639_1", validateLanguageCode)
 }
 
 // 英文字母加数字
@@ -153,4 +155,41 @@ func float64WithTwoDecimalPlaces(fl validator.FieldLevel) bool {
 	}
 
 	return true
+}
+
+// validatePassword 验证密码复杂度
+func validatePassword(fl validator.FieldLevel) bool {
+	password := fl.Field().String()
+
+	// 至少包含一个大写字母
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	// 至少包含一个小写字母
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	// 至少包含一个数字
+	hasNumber := regexp.MustCompile(`[0-9]`).MatchString(password)
+	// 至少包含一个特殊字符
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*(),.?":{}|<>]`).MatchString(password)
+
+	return hasUpper && hasLower && hasNumber && hasSpecial
+}
+
+// validateLanguageCode 验证语言代码是否符合 ISO 639-1 标准
+func validateLanguageCode(fl validator.FieldLevel) bool {
+	code := fl.Field().String()
+	if code == "" {
+		return true
+	}
+
+	// ISO 639-1 语言代码为两个小写字母
+	match, _ := regexp.MatchString("^[a-z]{2}$", code)
+	return match
+}
+
+// 支持的语言代码列表(可选，用于进一步验证)
+var supportedLanguages = map[string]bool{
+	"en": true, // 英语
+	"zh": true, // 中文
+	"ja": true, // 日语
+	"ko": true, // 韩语
+	// 可以添加更多支持的语言
 }
