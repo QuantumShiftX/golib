@@ -50,22 +50,39 @@ func (s *IdempotencyService) CheckIdempotency(ctx context.Context, requestID str
 	// 1. 先查本地缓存
 	if _, err := s.localCache.Get([]byte(key)); err == nil {
 		// 本地缓存命中，说明是重复请求
+		logx.WithContext(ctx).Infof("[CheckIdempotency] local cache hit: %s", key)
 		return false, nil
 	}
-	// 分布式
+	// 2. 查询Redis中是否存在该键
+	exists, err := s.redisClient.Exists(ctx, key).Result()
+	if err != nil {
+		return false, fmt.Errorf("check redis key error: %w", err)
+	}
+	if exists > 0 {
+		logx.WithContext(ctx).Infof("[CheckIdempotency] redis hit: %s", key)
+		return false, nil
+	}
+	// 3. 尝试获取分布式锁
 	mutex := s.rs.NewMutex(
 		key,
-		redsync.WithExpiry(s.expiration),
+		redsync.WithExpiry(30*time.Second),
 		redsync.WithTries(1),
 	)
-	if err := mutex.Lock(); err != nil {
+	if err = mutex.Lock(); err != nil {
+		logx.WithContext(ctx).Infof("[CheckIdempotency] lock error: %+v", err)
 		// 获取锁失败，说明是重复请求
 		return false, nil
 	}
+	defer mutex.Unlock()
 	// 获取锁成功，说明是新请求
 	// 注意：这里不主动释放锁，让它自然过期
 	// 这样可以在锁的有效期内防止重复处理
-	// 3. 设置成功，同时更新本地缓存
+	// 4. 在Redis中设置幂等标记
+	err = s.redisClient.Set(ctx, key, "1", s.expiration).Err()
+	if err != nil {
+		return false, fmt.Errorf("set redis key error: %w", err)
+	}
+	// 5. 设置成功，同时更新本地缓存
 	expireSeconds := int(s.expiration.Seconds() - 60) // 设置略短的本地缓存时间
 	err = s.localCache.Set([]byte(key), []byte("1"), expireSeconds)
 	if err != nil {
