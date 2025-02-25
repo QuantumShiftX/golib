@@ -217,21 +217,21 @@ func IsAuthenticated(ctx context.Context) bool {
 
 // RequestClientInfo 客户端信息结构体
 type RequestClientInfo struct {
-	IP          string    // 客户端IP地址
-	Platform    string    // 平台：Windows、Linux等
-	OS          string    // 操作系统
-	Browser     string    // 浏览器信息
-	BrowserVer  string    // 浏览器版本
-	IsMobile    bool      // 是否是手机端
-	UserAgent   string    // 完整的User-Agent
-	DeviceID    string    // 设备ID
-	DeviceType  string    // 设备类型
-	AppVersion  string    // 应用版本 (如果是App)
-	ScreenSize  string    // 屏幕尺寸
-	Language    string    // 语言
-	Timezone    string    // 时区
-	Referrer    string    // 引荐来源
-	RequestTime time.Time // 请求时间
+	IP          string // 客户端IP地址
+	Platform    string // 平台：Windows、Linux等
+	OS          string // 操作系统
+	Browser     string // 浏览器信息
+	BrowserVer  string // 浏览器版本
+	IsMobile    bool   // 是否是手机端
+	UserAgent   string // 完整的User-Agent
+	DeviceID    string // 设备ID
+	DeviceType  string // 设备类型
+	AppVersion  string // 应用版本 (如果是App)
+	ScreenSize  string // 屏幕尺寸
+	Language    string // 语言
+	Timezone    string // 时区
+	Referrer    string // 引荐来源
+	RequestTime int64  // 请求时间 毫秒
 }
 
 // GetRequestClientInfoFromCtx 从上下文中获取RequestClientInfo
@@ -283,7 +283,7 @@ func CreateClientInfoFromHeaders(headers map[string][]string) *RequestClientInfo
 		Browser:     getFirstHeaderValue(headers, HeaderBrowser),
 		Language:    getFirstHeaderValue(headers, HeaderLanguage),
 		Timezone:    getFirstHeaderValue(headers, HeaderTimezone),
-		RequestTime: time.Now(),
+		RequestTime: time.Now().UnixMilli(),
 	}
 	return info
 }
