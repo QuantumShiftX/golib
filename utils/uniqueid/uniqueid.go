@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,8 @@ const (
 var (
 	flake      *sonyflake.Sonyflake
 	randSource rand.Source
+	// 用于保证ID生成的互斥锁
+	idMutex sync.Mutex
 )
 
 func init() {
@@ -114,6 +117,81 @@ func VerifyInviteCode(code string) bool {
 		}
 	}
 	return true
+}
+func GenDefaultSnowID() (int64, error) {
+	snowID, err := GenSnowIDWithLength(0, 0)
+	return int64(snowID), err
+}
+
+// GenSnowIDWithLength 生成指定位数的ID
+// minDigits: 最小位数（6-12）
+// maxDigits: 最大位数（6-12）
+func GenSnowIDWithLength(minDigits, maxDigits int) (id uint64, err error) {
+	// 如果参数无效，使用默认值
+	if minDigits < 6 || minDigits > 12 {
+		minDigits = 6
+	}
+	if maxDigits < minDigits || maxDigits > 12 {
+		maxDigits = 12
+	}
+	if maxDigits < minDigits {
+		maxDigits = minDigits
+	}
+
+	idMutex.Lock()
+	defer idMutex.Unlock()
+
+	// 生成一个雪花ID
+	if id, err = flake.NextID(); err != nil {
+		return 0, fmt.Errorf("failed to generate snowflake ID: %v", err)
+	}
+
+	// 获取当前时间戳的纳秒部分，用于增加随机性
+	timestamp := time.Now().UnixNano()
+
+	// 创建一个新的随机数生成器
+	randGen := rand.New(randSource)
+	random := randGen.Intn(10000) // 生成0-9999之间的随机数
+
+	// 结合雪花ID、时间戳和随机数生成ID
+	combined := fmt.Sprintf("%d%d%d", id, timestamp%1000000000, random)
+
+	// 动态决定取多少位
+	digits := minDigits
+	if minDigits != maxDigits {
+		digits = minDigits + randGen.Intn(maxDigits-minDigits+1)
+	}
+
+	// 如果combined的长度小于所需位数，在前面补0
+	for len(combined) < digits {
+		combined = "0" + combined
+	}
+
+	// 根据选择的位数生成最终ID
+	finalStr := combined
+	if len(combined) > digits {
+		startPos := randGen.Intn(len(combined) - digits + 1)
+		finalStr = combined[startPos : startPos+digits]
+	}
+
+	// 转换为uint64
+	finalID, err := strconv.ParseUint(finalStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to generate %d-digit ID: %v", digits, err)
+	}
+
+	// 确保ID至少有minDigits位
+	minValue := uint64(1)
+	for i := 0; i < minDigits-1; i++ {
+		minValue *= 10
+	}
+
+	// 如果ID小于最小值，增加最小值
+	if finalID < minValue {
+		finalID += minValue
+	}
+
+	return finalID, nil
 }
 
 // 获取机器 ID 基于 Docker 环境

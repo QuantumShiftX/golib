@@ -152,3 +152,19 @@ func (j *JWT) DelCacheToken(ctx context.Context, uid any) (err error) {
 	}
 	return
 }
+
+// GetCacheToken 获取缓存的token
+func (j *JWT) GetCacheToken(ctx context.Context, uid any) (token string, err error) {
+	if j.sso && j.rdb != nil { //验证token是否存在与redis
+		var stringCmd = j.rdb.Get(ctx, j.generateCacheKey(uid))
+		if err = stringCmd.Err(); err != nil {
+			if errors.Is(err, redis.Nil) {
+				err = ErrInvalidToken
+				return
+			}
+			return
+		}
+		token = stringCmd.Val()
+	}
+	return
+}
