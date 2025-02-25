@@ -340,3 +340,5 @@ func HasPermission(ctx context.Context, permission string) bool {
 	}
 	return false
 }
+
+// 加油干  干中学
