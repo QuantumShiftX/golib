@@ -52,7 +52,7 @@ func RequestInfoInterceptor(ctx context.Context, req interface{}, info *grpc.Una
 		Language:    getFirstMetadataValue(md, metadata.HeaderLanguage),
 		Timezone:    getFirstMetadataValue(md, metadata.HeaderTimezone),
 		Referrer:    getFirstMetadataValue(md, metadata.HeaderReferrer),
-		RequestTime: time.Now().Unix(),
+		RequestTime: time.Now().UnixMilli(),
 	}
 
 	// 将信息添加到上下文
