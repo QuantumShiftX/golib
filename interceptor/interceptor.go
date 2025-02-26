@@ -85,8 +85,6 @@ func RequestInfoInterceptor(ctx context.Context, req interface{}, info *grpc.Una
 			requestID, info.FullMethod, traceID)
 	}
 
-	fmt.Println("================")
-
 	// 继续处理请求
 	return handler(newCtx, req)
 }
