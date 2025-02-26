@@ -15,7 +15,7 @@ import (
 
 const (
 	// 邀请码字符集，去掉了容易混淆的字符
-	inviteCodeChars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+	inviteCodeChars = "1234567890ABCDEFGHIJKLMNPQRSTUVWXYZ"
 	// 邀请码长度
 	inviteCodeLength = 6
 )
@@ -69,36 +69,39 @@ func GenUserID() (id uint64, err error) {
 	return finalID, nil
 }
 
-// GenInviteCode 根据用户ID生成邀请码
+// GenInviteCode 根据用户ID生成6位邀请码
 func GenInviteCode(userID uint64) (string, error) {
-	// 生成一个雪花ID
-	sfid, err := flake.NextID()
-	if err != nil {
-		return "", fmt.Errorf("generate snowflake id failed: %v", err)
-	}
-
-	// 将雪花ID和用户ID混合
-	// 使用位运算确保数值唯一性
-	mixID := (int64(sfid) << 20) | (int64(userID) & 0xFFFFF) // 取用户ID后20位
-
-	// 创建随机数生成器
+	// 创建一个安全的随机数生成器
+	randSource := rand.NewSource(time.Now().UnixNano() ^ int64(userID))
 	randGen := rand.New(randSource)
+
+	// 使用userId的各个位进行混合，防止溢出
+	// 将64位的userID拆分为多个较小的部分
+	part1 := uint32(userID & 0xFFFF)         // 低16位
+	part2 := uint32((userID >> 16) & 0xFFFF) // 次低16位
+	part3 := uint32((userID >> 32) & 0xFFFF) // 次高16位
+	part4 := uint32((userID >> 48) & 0xFFFF) // 高16位
+
+	// 混合各部分生成混合值
+	mixValue := (part1 ^ part2 ^ part3 ^ part4) | uint32(randGen.Intn(10000))
 
 	// 生成邀请码
 	var code strings.Builder
 	code.Grow(inviteCodeLength)
 
-	// 前6位使用混合ID映射
-	for i := 0; i < 6; i++ {
-		index := int(mixID % int64(len(inviteCodeChars)))
-		code.WriteByte(inviteCodeChars[index])
-		mixID /= int64(len(inviteCodeChars))
-	}
-
-	// 后2位使用随机数，增加分散度
-	for i := 0; i < 2; i++ {
-		index := randGen.Intn(len(inviteCodeChars))
-		code.WriteByte(inviteCodeChars[index])
+	// 生成6位邀请码
+	for i := 0; i < inviteCodeLength; i++ {
+		// 每次使用不同的混合算法，增加随机性
+		if i < 3 {
+			// 前3位使用ID特征
+			index := int((mixValue + uint32(i)*7919) % uint32(len(inviteCodeChars)))
+			code.WriteByte(inviteCodeChars[index])
+			mixValue = (mixValue * 31) + uint32(part1+part3)
+		} else {
+			// 后3位增加更多随机性
+			randVal := randGen.Intn(len(inviteCodeChars))
+			code.WriteByte(inviteCodeChars[randVal])
+		}
 	}
 
 	return code.String(), nil
