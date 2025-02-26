@@ -265,11 +265,15 @@ func UpdateRequestClientInfo(ctx context.Context, updater func(*RequestClientInf
 
 	info := GetRequestClientInfoFromCtx(ctx)
 	if info == nil {
-		info = &RequestClientInfo{}
+		// 创建新的 RequestClientInfo
+		newInfo := &RequestClientInfo{}
+		updater(newInfo)                                        // 应用更新
+		return WithMetadata(ctx, CtxRequestClientInfo, newInfo) // 存储指针
 	}
 
+	// 已存在，应用更新
 	updater(info)
-	return WithMetadata(ctx, CtxRequestClientInfo, *info)
+	return WithMetadata(ctx, CtxRequestClientInfo, info) // 存储更新后的指针
 }
 
 // CreateClientInfoFromHeaders 从HTTP头创建客户端信息
