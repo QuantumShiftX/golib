@@ -34,3 +34,7 @@ func (p *Pagination) GetPage() int64 {
 func (p *Pagination) GetPageSize() int64 {
 	return p.PageSize
 }
+
+func (p *Pagination) GetTotalPage() int64 {
+	return p.TotalPage
+}
