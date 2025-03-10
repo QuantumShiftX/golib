@@ -77,6 +77,7 @@ func GenId() (int64, error) {
 	return int64(id), nil
 }
 
+// Deprecated: GenUserID 可能会有重复的ID
 func GenUserID() (id uint64, err error) {
 	// 确保已初始化
 	if err := ensureInit(); err != nil {
