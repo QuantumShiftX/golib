@@ -806,10 +806,14 @@ func (x *IDGenX) GenSnowIDWithLength(minDigits, maxDigits int) (int64, error) {
 	return x.GenIDWithDigits(digits)
 }
 
-// GenDefaultSnowID 生成默认位数(10位)的ID
-func (x *IDGenX) GenDefaultSnowID() (int64, error) {
-	snowID, err := x.GenIDWithDigits(10)
-	return int64(snowID), err
+// GenDefaultShortSnowID 生成默认位数(8位)的ID
+func (x *IDGenX) GenDefaultShortSnowID() (int64, error) {
+	return x.GenIDWithDigits(8)
+}
+
+// GenDefaultLongSnowID 生成默认位数(12位)的ID
+func (x *IDGenX) GenDefaultLongSnowID() (int64, error) {
+	return x.GenIDWithDigits(12)
 }
 
 // GenInviteCode 根据用户ID生成6位邀请码
