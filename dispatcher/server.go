@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/config"
 	"github.com/hibiken/asynq"
 	"github.com/hibiken/asynqmon"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -40,16 +39,6 @@ type Server struct {
 	running          bool
 }
 
-// NewOptions 从配置创建选项
-func NewOptions(c config.Config) (*Options, error) {
-	opts := DefaultOptions()
-	err := c.Value("Scheduler").Scan(opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load scheduler config: %w", err)
-	}
-	return opts, nil
-}
-
 // NewServer 创建新服务器
 func NewServer(opts *Options) (*Server, error) {
 	if opts == nil {
@@ -71,7 +60,7 @@ func NewServer(opts *Options) (*Server, error) {
 				PriorityNormal.String(): opts.Server.QueuePriorities.Normal,
 				PriorityHigh.String():   opts.Server.QueuePriorities.High,
 			},
-			ShutdownTimeout: opts.Server.ShutdownTimeout,
+			ShutdownTimeout: time.Duration(opts.Server.ShutdownTimeout) * time.Second,
 			Logger:          logger,
 			LogLevel:        asynq.InfoLevel,
 		},
