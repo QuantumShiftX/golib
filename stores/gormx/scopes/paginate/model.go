@@ -18,11 +18,11 @@ func (p *Pagination) Offset() int64 {
 }
 
 func (p *Pagination) Limit() int64 {
-	if p.PageSize < 10 {
+	if p.PageSize == 0 {
 		p.PageSize = 10
 	}
-	if p.PageSize > 100 {
-		p.PageSize = 100
+	if p.PageSize > 1000 {
+		p.PageSize = 1000
 	}
 	return p.PageSize
 }
