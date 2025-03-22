@@ -57,7 +57,7 @@ func HandleError(err error) error {
 	}
 
 	// 不是自定义错误，包装成默认的服务器错误
-	return New(ServerError, "系统错误: "+err.Error())
+	return New(ServerInternalError, "系统错误: "+err.Error())
 }
 
 // HandleParamError 处理参数错误

@@ -38,14 +38,44 @@ func alphaNum(fl validator.FieldLevel) bool {
 }
 
 // 密码，字母/符号/数字 的随机组合
+// 字母/符号/数字的随机组合
+// 密码必须包含至少一个字母、一个数字和一个特殊符号
 func pwd(fl validator.FieldLevel) bool {
 	s, ok := fl.Field().Interface().(string)
 	if !ok {
 		return false
 	}
 
-	match, _ := regexp.MatchString("^[a-zA-Z0-9\\W_]+$", s)
-	return match
+	// 检查长度（可以根据需求调整）
+	if len(s) < 8 {
+		return false
+	}
+
+	// 检查是否包含字母
+	hasLetter, err := regexp.MatchString("[a-zA-Z]", s)
+	if err != nil || !hasLetter {
+		return false
+	}
+
+	// 检查是否包含数字
+	hasDigit, err := regexp.MatchString("[0-9]", s)
+	if err != nil || !hasDigit {
+		return false
+	}
+
+	// 检查是否包含特殊符号
+	hasSymbol, err := regexp.MatchString("[\\W_]", s)
+	if err != nil || !hasSymbol {
+		return false
+	}
+
+	// 检查整体格式 - 只允许字母、数字和特殊符号
+	validChars, err := regexp.MatchString("^[a-zA-Z0-9\\W_]+$", s)
+	if err != nil {
+		return false
+	}
+
+	return validChars
 }
 
 // 数组不能为空
