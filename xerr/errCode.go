@@ -6,7 +6,7 @@ type ErrCode int
 const (
 	ParamError             ErrCode = 400 // 参数错误
 	UnauthorizedError      ErrCode = 401 // 无权限
-	ServerError            ErrCode = 500 // 服务器内部错误
+	ServerError            ErrCode = 500 // network service is congested. please try again later.
 	ServerInternalError    ErrCode = 501 // 服务器出错
 	DbError                ErrCode = 600 // 数据库错误
 	CaptchaError           ErrCode = 700 // 验证码错误
