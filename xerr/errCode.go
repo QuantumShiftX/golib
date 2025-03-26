@@ -31,3 +31,8 @@ func (e ErrCode) Int() int {
 func (e ErrCode) Int64() int64 {
 	return int64(e)
 }
+
+const (
+	SuccessCode int64  = 0
+	SuccessMsg  string = "success"
+)
