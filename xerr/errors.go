@@ -20,7 +20,7 @@ func (e *XErr) Error() string {
 	return e.Msg
 }
 
-// ErrorCode 实现 XError 接口
+// 实现 XError 接口
 func (e *XErr) ErrorCode() int {
 	return int(e.Code)
 }
@@ -36,7 +36,7 @@ func (e *XErr) Unwrap() error {
 }
 
 // New 创建自定义错误
-func New(code ErrCode, msg string, args ...interface{}) error {
+func New(code ErrCode, msg string, args ...interface{}) *XErr {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
@@ -47,7 +47,7 @@ func New(code ErrCode, msg string, args ...interface{}) error {
 }
 
 // Wrap 包装错误
-func Wrap(code ErrCode, err error, msg string, args ...interface{}) error {
+func Wrap(code ErrCode, err error, msg string, args ...interface{}) *XErr {
 	if err == nil {
 		return nil
 	}
@@ -83,7 +83,7 @@ func Wrap(code ErrCode, err error, msg string, args ...interface{}) error {
 }
 
 // NewParamErr 创建参数错误
-func NewParamErr(msg string) error {
+func NewParamErr(msg string) *XErr {
 	return New(ParamError, msg)
 }
 
@@ -242,8 +242,8 @@ func IsDBError(err error) bool {
 
 // ExampleUsage 示例使用函数
 func ExampleUsage() {
-	// 创建新的错误
-	err := New(ParamError, "无效的用户ID: %d", 1001)
+	// 使用预定义错误
+	err := ErrorServer
 
 	// 获取错误信息
 	code, msg, isCustom := GetCodeAndMessage(err)
@@ -253,10 +253,8 @@ func ExampleUsage() {
 	jsonErr := ToJSON(err)
 	fmt.Printf("JSON错误: %v\n", jsonErr)
 
-	// 检查错误类型
-	if IsParamError(err) {
-		fmt.Println("这是一个参数错误")
-	}
+	// 创建新的错误
+	//paramErr := New(ParamError, "无效的用户ID: %d", 1001)
 
 	// 包装标准库错误
 	stdErr := serr.New("无法连接数据库")
@@ -265,8 +263,4 @@ func ExampleUsage() {
 	// 获取包装错误的信息
 	code, msg, _ = GetCodeAndMessage(wrappedErr)
 	fmt.Printf("包装错误代码: %d, 错误消息: %s\n", code, msg)
-
-	// 解包错误
-	originalErr := serr.Unwrap(wrappedErr)
-	fmt.Printf("原始错误: %s\n", originalErr.Error())
 }

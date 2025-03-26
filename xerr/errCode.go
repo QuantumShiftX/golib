@@ -13,15 +13,15 @@ const (
 	GoogleAuthCodeRequired ErrCode = 701 // 需要google验证码
 )
 
-// 通用错误定义
+// 定义预设错误为 *XErr 类型
 var (
-	ErrParam                  = New(ParamError, "param error")
-	ErrUnauthorized           = New(UnauthorizedError, "unauthorized error")
-	ErrorServer               = New(ServerError, "network service is congested. please try again later.")
-	ErrorInternalServer       = New(ServerInternalError, "server error")
-	ErrDB                     = New(DbError, "db error")
-	ErrCaptcha                = New(CaptchaError, "captcha error")
-	ErrGoogleAuthCodeRequired = New(GoogleAuthCodeRequired, "google auth code required")
+	ErrParam                  = &XErr{Code: ParamError, Msg: "param error"}
+	ErrUnauthorized           = &XErr{Code: UnauthorizedError, Msg: "unauthorized error"}
+	ErrorServer               = &XErr{Code: ServerError, Msg: "network service is congested. please try again later."}
+	ErrorInternalServer       = &XErr{Code: ServerInternalError, Msg: "server error"}
+	ErrDB                     = &XErr{Code: DbError, Msg: "db error"}
+	ErrCaptcha                = &XErr{Code: CaptchaError, Msg: "captcha error"}
+	ErrGoogleAuthCodeRequired = &XErr{Code: GoogleAuthCodeRequired, Msg: "google auth code required"}
 )
 
 func (e ErrCode) Int() int {
