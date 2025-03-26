@@ -13,7 +13,7 @@ const (
 	GoogleAuthCodeRequired ErrCode = 701 // 需要google验证码
 )
 
-// 通用错误
+// 通用错误定义
 var (
 	ErrParam                  = New(ParamError, "param error")
 	ErrUnauthorized           = New(UnauthorizedError, "unauthorized error")
@@ -30,13 +30,4 @@ func (e ErrCode) Int() int {
 
 func (e ErrCode) Int64() int64 {
 	return int64(e)
-}
-
-/*
- * 业务code
- */
-
-type ErrCodeMessage struct {
-	Code ErrCode `json:"code"`
-	Msg  string  `json:"msg"`
 }

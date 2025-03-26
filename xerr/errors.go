@@ -3,15 +3,83 @@ package xerr
 import (
 	serr "errors"
 	"fmt"
-	"github.com/zeromicro/x/errors"
 )
+
+// XErr 统一错误类型
+type XErr struct {
+	Code ErrCode `json:"code"`
+	Msg  string  `json:"msg"`
+	err  error   // 原始错误，可以为nil
+}
+
+// 实现 error 接口
+func (e *XErr) Error() string {
+	if e.Msg == "" && e.err != nil {
+		return e.err.Error()
+	}
+	return e.Msg
+}
+
+// ErrorCode 实现 XError 接口
+func (e *XErr) ErrorCode() int {
+	return int(e.Code)
+}
+
+// GetOriginalError 获取原始错误
+func (e *XErr) GetOriginalError() error {
+	return e.err
+}
+
+// Unwrap 实现错误解包
+func (e *XErr) Unwrap() error {
+	return e.err
+}
 
 // New 创建自定义错误
 func New(code ErrCode, msg string, args ...interface{}) error {
 	if len(args) > 0 {
 		msg = fmt.Sprintf(msg, args...)
 	}
-	return errors.New(int(code), msg)
+	return &XErr{
+		Code: code,
+		Msg:  msg,
+	}
+}
+
+// Wrap 包装错误
+func Wrap(code ErrCode, err error, msg string, args ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	wrappedMsg := msg
+	if len(args) > 0 {
+		wrappedMsg = fmt.Sprintf(msg, args...)
+	}
+
+	// 检查是否已经是 XErr
+	var xe *XErr
+	if serr.As(err, &xe) {
+		// 如果已经是XErr，保留原有的code，除非明确指定了新code
+		if code == 0 {
+			code = xe.Code
+		}
+		if wrappedMsg == "" {
+			wrappedMsg = xe.Msg
+		} else {
+			wrappedMsg = fmt.Sprintf("%s: %s", wrappedMsg, xe.Msg)
+		}
+	} else if wrappedMsg == "" {
+		wrappedMsg = err.Error()
+	} else {
+		wrappedMsg = fmt.Sprintf("%s: %s", wrappedMsg, err.Error())
+	}
+
+	return &XErr{
+		Code: code,
+		Msg:  wrappedMsg,
+		err:  err,
+	}
 }
 
 // NewParamErr 创建参数错误
@@ -19,20 +87,14 @@ func NewParamErr(msg string) error {
 	return New(ParamError, msg)
 }
 
-// 定义自定义错误接口
-type XError interface {
-	error
-	ErrorCode() int
-}
-
-// IsXError 检查错误是否实现了XError接口
-func IsXError(err error) bool {
+// IsXErr 检查错误是否为XErr类型
+func IsXErr(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	var xError XError
-	return serr.As(err, &xError)
+	var xe *XErr
+	return serr.As(err, &xe)
 }
 
 // GetErrorCode 从错误中获取错误码
@@ -41,14 +103,7 @@ func GetErrorCode(err error) int {
 		return 0
 	}
 
-	// 尝试解包为zeromicro错误
-	var zerr *errors.CodeMsg
-	if serr.As(err, &zerr) {
-		return zerr.Code
-	}
-
-	// 再尝试使用XError接口
-	var xe XError
+	var xe *XErr
 	if serr.As(err, &xe) {
 		return xe.ErrorCode()
 	}
@@ -62,73 +117,27 @@ func GetErrorMessage(err error) string {
 		return ""
 	}
 
-	// 尝试解包为zeromicro错误
-	var zerr *errors.CodeMsg
-	if serr.As(err, &zerr) {
-		return zerr.Msg
+	var xe *XErr
+	if serr.As(err, &xe) {
+		return xe.Error()
 	}
 
 	return err.Error()
 }
 
 // GetCodeAndMessage 从错误中提取错误代码和消息
-// 返回错误代码、错误消息以及是否为自定义XError
 func GetCodeAndMessage(err error) (int, string, bool) {
 	if err == nil {
 		return 0, "", false
 	}
 
-	// 尝试解包为zeromicro错误
-	var zerr *errors.CodeMsg
-	if serr.As(err, &zerr) {
-		return zerr.Code, zerr.Msg, true
-	}
-
-	// 尝试使用我们的XError接口
-	var xe XError
+	var xe *XErr
 	if serr.As(err, &xe) {
-		return xe.ErrorCode(), err.Error(), true
+		return xe.ErrorCode(), xe.Error(), true
 	}
 
 	// 不是自定义错误
 	return 0, err.Error(), false
-}
-
-// FormatError 将任何错误转换为ErrCodeMessage结构体
-func FormatError(err error) ErrCodeMessage {
-	if err == nil {
-		return ErrCodeMessage{Code: 0, Msg: ""}
-	}
-
-	code, msg, _ := GetCodeAndMessage(err)
-	return ErrCodeMessage{
-		Code: ErrCode(code),
-		Msg:  msg,
-	}
-}
-
-// ExtractErrorDetails 返回错误代码和消息
-func ExtractErrorDetails(err error) (ErrCode, string) {
-	if err == nil {
-		return 0, ""
-	}
-
-	code, msg, _ := GetCodeAndMessage(err)
-	return ErrCode(code), msg
-}
-
-// WrapError 包装错误并保留原始错误信息
-func WrapError(errType ErrCode, err error, format string, args ...interface{}) error {
-	if err == nil {
-		return nil
-	}
-
-	msg := format
-	if len(args) > 0 {
-		msg = fmt.Sprintf(format, args...)
-	}
-
-	return New(errType, fmt.Sprintf("%s: %s", msg, err.Error()))
 }
 
 // ToJSON 将错误转换为JSON格式的错误信息
@@ -140,10 +149,28 @@ func ToJSON(err error) map[string]interface{} {
 		}
 	}
 
-	errInfo := FormatError(err)
+	code, msg, _ := GetCodeAndMessage(err)
 	return map[string]interface{}{
-		"code": errInfo.Code,
-		"msg":  errInfo.Msg,
+		"code": code,
+		"msg":  msg,
+	}
+}
+
+// FromError 从标准错误转换为XErr
+func FromError(err error) *XErr {
+	if err == nil {
+		return nil
+	}
+
+	var xe *XErr
+	if serr.As(err, &xe) {
+		return xe
+	}
+
+	return &XErr{
+		Code: ServerInternalError, // 默认为服务器内部错误
+		Msg:  err.Error(),
+		err:  err,
 	}
 }
 
@@ -154,22 +181,12 @@ func HandleError(err error) error {
 	}
 
 	// 检查是否为自定义错误
-	if IsXError(err) || IsCodeMsg(err) {
+	if IsXErr(err) {
 		return err
 	}
 
 	// 包装成默认的服务器错误
-	return WrapError(ServerInternalError, err, "系统错误")
-}
-
-// IsCodeMsg 检查错误是否为CodeMsg类型
-func IsCodeMsg(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	var codeMsg *errors.CodeMsg
-	return serr.As(err, &codeMsg)
+	return Wrap(ServerInternalError, err, "系统错误")
 }
 
 // HandleParamError 处理参数错误
@@ -178,11 +195,11 @@ func HandleParamError(err error) error {
 		return nil
 	}
 
-	if IsXError(err) || IsCodeMsg(err) {
+	if IsXErr(err) {
 		return err
 	}
 
-	return WrapError(ParamError, err, "参数错误")
+	return Wrap(ParamError, err, "参数错误")
 }
 
 // HandleDBError 处理数据库错误
@@ -191,11 +208,11 @@ func HandleDBError(err error) error {
 		return nil
 	}
 
-	if IsXError(err) || IsCodeMsg(err) {
+	if IsXErr(err) {
 		return err
 	}
 
-	return WrapError(DbError, err, "数据库错误")
+	return Wrap(DbError, err, "数据库错误")
 }
 
 // IsErrorCode 检查错误是否为指定的错误码
@@ -225,19 +242,31 @@ func IsDBError(err error) bool {
 
 // ExampleUsage 示例使用函数
 func ExampleUsage() {
-	// 使用预定义错误
-	err := ErrUnauthorized
+	// 创建新的错误
+	err := New(ParamError, "无效的用户ID: %d", 1001)
 
-	// 提取错误信息
-	errInfo := FormatError(err)
-	fmt.Printf("错误代码: %d, 错误消息: %s\n", errInfo.Code, errInfo.Msg)
+	// 获取错误信息
+	code, msg, isCustom := GetCodeAndMessage(err)
+	fmt.Printf("错误代码: %d, 错误消息: %s, 是否自定义: %v\n", code, msg, isCustom)
 
 	// 转换为JSON
 	jsonErr := ToJSON(err)
 	fmt.Printf("JSON错误: %v\n", jsonErr)
 
 	// 检查错误类型
-	if IsUnauthorizedError(err) {
-		fmt.Println("这是一个未授权错误")
+	if IsParamError(err) {
+		fmt.Println("这是一个参数错误")
 	}
+
+	// 包装标准库错误
+	stdErr := serr.New("无法连接数据库")
+	wrappedErr := Wrap(DbError, stdErr, "查询用户记录失败")
+
+	// 获取包装错误的信息
+	code, msg, _ = GetCodeAndMessage(wrappedErr)
+	fmt.Printf("包装错误代码: %d, 错误消息: %s\n", code, msg)
+
+	// 解包错误
+	originalErr := serr.Unwrap(wrappedErr)
+	fmt.Printf("原始错误: %s\n", originalErr.Error())
 }
