@@ -125,6 +125,21 @@ func GetErrorMessage(err error) string {
 	return err.Error()
 }
 
+// GetCustomCodeAndMessage 从错误中提取错误代码和消息
+func GetCustomCodeAndMessage(err error) (int64, string) {
+	if err == nil {
+		return SuccessCode, SuccessMsg
+	}
+
+	var xe *XErr
+	if serr.As(err, &xe) {
+		return int64(xe.ErrorCode()), xe.Error()
+	}
+
+	// 不是自定义错误
+	return ServerError.Int64(), err.Error()
+}
+
 // GetCodeAndMessage 从错误中提取错误代码和消息
 func GetCodeAndMessage(err error) (int64, string, bool) {
 	if err == nil {
