@@ -20,7 +20,7 @@ func (e *XErr) Error() string {
 	return e.Msg
 }
 
-// 实现 XError 接口
+// ErrorCode 实现 XError 接口
 func (e *XErr) ErrorCode() int {
 	return int(e.Code)
 }
@@ -126,14 +126,14 @@ func GetErrorMessage(err error) string {
 }
 
 // GetCodeAndMessage 从错误中提取错误代码和消息
-func GetCodeAndMessage(err error) (int, string, bool) {
+func GetCodeAndMessage(err error) (int64, string, bool) {
 	if err == nil {
 		return 0, "", false
 	}
 
 	var xe *XErr
 	if serr.As(err, &xe) {
-		return xe.ErrorCode(), xe.Error(), true
+		return int64(xe.ErrorCode()), xe.Error(), true
 	}
 
 	// 不是自定义错误
