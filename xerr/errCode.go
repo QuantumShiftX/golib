@@ -28,6 +28,10 @@ func (e ErrCode) Int() int {
 	return int(e)
 }
 
+func (e ErrCode) Int64() int64 {
+	return int64(e)
+}
+
 /*
  * 业务code
  */
