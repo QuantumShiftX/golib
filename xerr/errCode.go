@@ -33,6 +33,6 @@ func (e ErrCode) Int64() int64 {
 }
 
 const (
-	SuccessCode int64  = 0
+	SuccessCode int64  = 200
 	SuccessMsg  string = "success"
 )
