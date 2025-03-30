@@ -53,3 +53,11 @@ func YuanToFen(c decimal.Decimal) int64 {
 func FenToYuan(c int64) string {
 	return decimal.NewFromInt(c).Div(decimal.NewFromInt(int64(Fen))).String()
 }
+
+// FenToWei 分转微
+func FenToWei(c int64) int64 {
+	// 1分 = 10000微
+	// Wei/Fen = 10000
+	ratio := Wei / Fen
+	return c * int64(ratio)
+}
