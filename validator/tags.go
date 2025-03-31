@@ -227,14 +227,9 @@ var supportedLanguages = map[string]bool{
 
 // 检查是否为合法时间戳
 func validTimestamp(fl validator.FieldLevel) bool {
-	s, ok := fl.Field().Interface().(string)
+	// 获取字段值作为 int64
+	timestamp, ok := fl.Field().Interface().(int64)
 	if !ok {
-		return false
-	}
-
-	// 尝试将字符串转换为整数
-	timestamp, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
 		return false
 	}
 
@@ -244,7 +239,8 @@ func validTimestamp(fl validator.FieldLevel) bool {
 	maxTimestamp := int64(2147483647) // 2038-01-19 03:14:07 UTC
 
 	// 对于毫秒级时间戳的检查 (13位)
-	if len(s) >= 13 {
+	// 通过判断数字大小而不是长度来检测是否为毫秒时间戳
+	if timestamp > 1000000000000 { // 大于这个数的时间戳很可能是毫秒级时间戳
 		minTimestamp = minTimestamp * 1000
 		maxTimestamp = maxTimestamp * 1000
 	}
