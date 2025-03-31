@@ -23,6 +23,7 @@ func registerTags() {
 	_ = validate.RegisterValidation("two_decimal_places", float64WithTwoDecimalPlaces)
 	_ = validate.RegisterValidation("password", validatePassword)
 	_ = validate.RegisterValidation("iso639_1", validateLanguageCode)
+	_ = validate.RegisterValidation("valid_timestamp", validTimestamp)
 }
 
 // 英文字母加数字
@@ -222,4 +223,31 @@ var supportedLanguages = map[string]bool{
 	"ja": true, // 日语
 	"ko": true, // 韩语
 	// 可以添加更多支持的语言
+}
+
+// 检查是否为合法时间戳
+func validTimestamp(fl validator.FieldLevel) bool {
+	s, ok := fl.Field().Interface().(string)
+	if !ok {
+		return false
+	}
+
+	// 尝试将字符串转换为整数
+	timestamp, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return false
+	}
+
+	// 检查时间戳是否在合理范围内
+	// Unix时间戳的有效范围 (1970-01-01至2038-01-19)
+	minTimestamp := int64(0)          // 1970-01-01 00:00:00 UTC
+	maxTimestamp := int64(2147483647) // 2038-01-19 03:14:07 UTC
+
+	// 对于毫秒级时间戳的检查 (13位)
+	if len(s) >= 13 {
+		minTimestamp = minTimestamp * 1000
+		maxTimestamp = maxTimestamp * 1000
+	}
+
+	return timestamp >= minTimestamp && timestamp <= maxTimestamp
 }
