@@ -93,9 +93,6 @@ func NotIn[T comparable](field string, value []T) func(db *gorm.DB) *gorm.DB {
 // GT 大于
 func GT(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		if isZero(value) {
-			return db
-		}
 		return db.Where(field+" > ?", value)
 	}
 }
@@ -103,9 +100,6 @@ func GT(field string, value any) func(db *gorm.DB) *gorm.DB {
 // GTE 大于等于
 func GTE(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		if isZero(value) {
-			return db
-		}
 		return db.Where(field+" >= ?", value)
 	}
 }
@@ -113,9 +107,6 @@ func GTE(field string, value any) func(db *gorm.DB) *gorm.DB {
 // LT 小于
 func LT(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		if isZero(value) {
-			return db
-		}
 		return db.Where(field+" < ?", value)
 	}
 }
@@ -123,9 +114,6 @@ func LT(field string, value any) func(db *gorm.DB) *gorm.DB {
 // LTE 小于等于
 func LTE(field string, value any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		if isZero(value) {
-			return db
-		}
 		return db.Where(field+" <= ?", value)
 	}
 }
