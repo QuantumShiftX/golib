@@ -61,3 +61,9 @@ func FenToWei(c int64) int64 {
 	ratio := Wei / Fen
 	return c * int64(ratio)
 }
+
+// WeiToFen 微转分
+func WeiToFen(c int64) int64 {
+	// 1分 = 10000微
+	return decimal.NewFromInt(c).Div(decimal.NewFromInt(int64(Wei / Fen))).IntPart()
+}
