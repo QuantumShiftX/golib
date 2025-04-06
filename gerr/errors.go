@@ -9,7 +9,7 @@ import (
 
 // GError gRPC error
 type GError struct {
-	Code codes.Code
+	Code ErrCode
 	Msg  string
 }
 
@@ -20,27 +20,37 @@ func (e *GError) Error() string {
 
 // 转换为 gRPC 状态错误
 func (e *GError) GRPCStatus() error {
-	return status.Errorf(e.Code, e.Msg)
+	return status.Errorf(codes.Code(e.Code), e.Msg)
 }
 
-// New 创建 GError
-func New(code codes.Code, msg string) *GError {
+// New 创建并直接返回 gRPC 状态错误
+func New(code ErrCode, msg string) error {
+	return status.Errorf(codes.Code(code), msg)
+}
+
+// NewGError 创建 GError 对象
+func NewGError(code ErrCode, msg string) *GError {
 	return &GError{Code: code, Msg: msg}
 }
 
-// Wrap 包装已有错误
-func Wrap(code codes.Code, err error) *GError {
+// Wrap 包装已有错误，直接返回 gRPC 状态错误
+func Wrap(code ErrCode, err error) error {
+	return status.Errorf(codes.Code(code), err.Error())
+}
+
+// WrapGError 包装已有错误，返回 GError 对象
+func WrapGError(code ErrCode, err error) *GError {
 	return &GError{Code: code, Msg: err.Error()}
 }
 
-// Is 判断错误是否是特定的 GError
-func Is(err error, target *GError) bool {
+// Is 判断错误是否是特定的错误码
+func Is(err error, targetCode ErrCode) bool {
 	var e *GError
 	if errors.As(err, &e) {
-		return e.Code == target.Code
+		return e.Code == targetCode
 	}
 	st, ok := status.FromError(err)
-	return ok && st.Code() == target.Code
+	return ok && ErrCode(st.Code()) == targetCode
 }
 
 // FromError 解析 gRPC 错误，转换为 GError
@@ -54,7 +64,7 @@ func FromError(err error) *GError {
 	}
 	st, ok := status.FromError(err)
 	if !ok {
-		return &GError{Code: codes.Unknown, Msg: err.Error()}
+		return &GError{Code: ErrCode(codes.Unknown), Msg: err.Error()}
 	}
-	return &GError{Code: st.Code(), Msg: st.Message()}
+	return &GError{Code: ErrCode(st.Code()), Msg: st.Message()}
 }

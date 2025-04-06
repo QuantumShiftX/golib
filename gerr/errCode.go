@@ -1,9 +1,7 @@
 package gerr
 
-import "google.golang.org/grpc/codes"
-
 // ErrCode 业务错误码
-type ErrCode codes.Code
+type ErrCode int
 
 const (
 	ParamError             ErrCode = 400 // 参数错误
@@ -15,17 +13,6 @@ const (
 	GoogleAuthCodeRequired ErrCode = 701 // 需要google验证码
 )
 
-// 定义预设错误为 *XErr 类型
-var (
-	ErrParam                  = &GError{Code: codes.Code(ParamError), Msg: "Invalid parameters. Please try again with correct input."}
-	ErrUnauthorized           = &GError{Code: codes.Code(UnauthorizedError), Msg: "Unauthorized. Please log in again."}
-	ErrorServer               = &GError{Code: codes.Code(ServerError), Msg: "Network service is congested. Please try again later."}
-	ErrorInternalServer       = &GError{Code: codes.Code(ServerInternalError), Msg: "Server error. We're working to resolve this issue."}
-	ErrDB                     = &GError{Code: codes.Code(DbError), Msg: "Database error. Please contact support if this persists."}
-	ErrCaptcha                = &GError{Code: codes.Code(CaptchaError), Msg: "CAPTCHA verification failed. Please try again."}
-	ErrGoogleAuthCodeRequired = &GError{Code: codes.Code(GoogleAuthCodeRequired), Msg: "Google authentication code required."}
-)
-
 func (e ErrCode) Int() int {
 	return int(e)
 }
@@ -33,6 +20,17 @@ func (e ErrCode) Int() int {
 func (e ErrCode) Int64() int64 {
 	return int64(e)
 }
+
+// 定义预设错误
+var (
+	ErrParam                  = New(ParamError, "Invalid parameters. Please try again with correct input.")
+	ErrUnauthorized           = New(UnauthorizedError, "Unauthorized. Please log in again.")
+	ErrorServer               = New(ServerError, "Network service is congested. Please try again later.")
+	ErrorInternalServer       = New(ServerInternalError, "Server error. We're working to resolve this issue.")
+	ErrDB                     = New(DbError, "Database error. Please contact support if this persists.")
+	ErrCaptcha                = New(CaptchaError, "CAPTCHA verification failed. Please try again.")
+	ErrGoogleAuthCodeRequired = New(GoogleAuthCodeRequired, "Google authentication code required.")
+)
 
 const (
 	SuccessCode int64  = 200
