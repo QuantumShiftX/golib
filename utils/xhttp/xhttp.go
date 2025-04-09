@@ -2,6 +2,8 @@ package xhttp
 
 import (
 	"context"
+	"github.com/QuantumShiftX/golib/gerr"
+	"github.com/QuantumShiftX/golib/xerr"
 	"github.com/zeromicro/go-zero/core/trace"
 	"github.com/zeromicro/go-zero/rest/httpx"
 	"github.com/zeromicro/x/errors"
@@ -25,6 +27,8 @@ type BaseResponse[T any] struct {
 	Message string `json:"message" xml:"message"`
 	// Data represents the business data.
 	Data T `json:"data,omitempty" xml:"data,omitempty"`
+	// Trace id for trace
+	TraceID string `json:"trace_id,omitempty" xml:"trace_id,omitempty"`
 }
 
 // JsonBaseResponseCtx writes v into w with http.StatusOK.
@@ -45,6 +49,12 @@ func wrapBaseResponse(v any) BaseResponse[any] {
 	var resp BaseResponse[any]
 
 	switch data := v.(type) {
+	case *xerr.XErr:
+		resp.Code = int(data.Code)
+		resp.Message = data.Msg
+	case *gerr.GError:
+		resp.Code = int(data.Code)
+		resp.Message = data.Msg
 	case *errors.CodeMsg:
 		resp.Code = data.Code
 		resp.Message = data.Msg
