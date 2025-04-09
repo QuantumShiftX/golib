@@ -54,7 +54,7 @@ func registerEnglishTranslations(trans ut.Translator) {
 
 	// 密码格式
 	_ = validate.RegisterTranslation("pwd", trans, func(ut ut.Translator) error {
-		return ut.Add("pwd", "Password format is incorrect, must contain letters, numbers, and special characters", true)
+		return ut.Add("pwd", "Password must contain at least 8 characters, including letters, numbers, and special characters.", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
 		t, _ := ut.T("pwd", fe.Field())
 		return t
@@ -161,7 +161,7 @@ func registerChineseTranslations(trans ut.Translator) {
 
 	// 密码格式
 	_ = validate.RegisterTranslation("pwd", trans, func(ut ut.Translator) error {
-		return ut.Add("pwd", "密码格式不正确，需包含字母、数字和特殊符号", true)
+		return ut.Add("pwd", "密码必须包含字母、数字和特殊字符且至少8位", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
 		t, _ := ut.T("pwd", fe.Field())
 		return t
