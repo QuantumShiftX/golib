@@ -6,6 +6,7 @@ type ErrCode int
 const (
 	ParamError             ErrCode = 400 // 参数错误
 	UnauthorizedError      ErrCode = 401 // 无权限
+	ForbiddenError         ErrCode = 403 // 无权限
 	ServerError            ErrCode = 500 // network service is congested. please try again later.
 	ServerInternalError    ErrCode = 501 // 服务器出错
 	DbError                ErrCode = 600 // 数据库错误
@@ -17,6 +18,7 @@ const (
 var (
 	ErrParam                  = &XErr{Code: ParamError, Msg: "param error"}
 	ErrUnauthorized           = &XErr{Code: UnauthorizedError, Msg: "unauthorized error"}
+	ErrorForbidden            = &XErr{Code: ForbiddenError, Msg: "forbidden error"}
 	ErrorServer               = &XErr{Code: ServerError, Msg: "network service is congested. please try again later."}
 	ErrorInternalServer       = &XErr{Code: ServerInternalError, Msg: "server error"}
 	ErrDB                     = &XErr{Code: DbError, Msg: "db error"}
