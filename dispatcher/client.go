@@ -136,9 +136,14 @@ func (c *Client) ScheduleIn(ctx context.Context, method string, args interface{}
 	return c.Enqueue(ctx, method, args, options...)
 }
 
-// CancelTask 取消任务
+// CancelTask 取消任务（正在执行中，尽力而为不保证成功）
 func (c *Client) CancelTask(ctx context.Context, taskID string) error {
 	return c.inspector.CancelProcessing(taskID)
+}
+
+// DeleteTask 删除任务（进行中的任务，删除会报错，确定性行为）
+func (c *Client) DeleteTask(ctx context.Context, queue, taskID string) error {
+	return c.inspector.DeleteTask(queue, taskID)
 }
 
 // TaskStatus 获取任务状态
