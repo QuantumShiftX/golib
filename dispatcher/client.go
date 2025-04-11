@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -10,6 +11,26 @@ import (
 	"github.com/zeromicro/go-zero/core/jsonx"
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/grpc"
+)
+
+var (
+	// ErrNoProcessableTask indicates that there are no tasks ready to be processed.
+	ErrNoProcessableTask = errors.New("no tasks are ready for processing")
+
+	// ErrDuplicateTask indicates that another task with the same unique key holds the uniqueness lock.
+	ErrDuplicateTask = errors.New("task already exists")
+
+	// ErrTaskIdConflict indicates that another task with the same task ID already exist
+	ErrTaskIdConflict = errors.New("task id conflicts with another task")
+
+	// ErrQueueNotFound indicates that the specified queue does not exist.
+	ErrQueueNotFound = errors.New("queue not found")
+
+	// ErrQueueNotEmpty indicates that the specified queue is not empty.
+	ErrQueueNotEmpty = errors.New("queue is not empty")
+
+	// ErrTaskNotFound indicates that the specified task cannot be found in the queue.
+	ErrTaskNotFound = errors.New("task not found")
 )
 
 // 全局变量
