@@ -34,14 +34,15 @@ const (
 // Context keys
 const (
 	// User related
-	CtxJWTUserId         = "uid"              // 用户id
-	CtxJWTUsername       = "username"         // 用户名
-	CtxUserRole          = "user_role"        // 用户角色
-	CtxUserPermissions   = "user_permissions" // 用户权限
-	CtxUserStatus        = "user_status"      // 用户状态
-	CtxUserLastLoginTime = "last_login_time"  // 最后登录时间
-	CtxUserAgentId       = "agent_id"         // 代理ID
-	CtxUserParentAgentId = "parent_agent_id"  // 上级代理ID
+	CtxJWTUserId         = "uid"             // 用户id
+	CtxJWTUsername       = "username"        // 用户名
+	CtxUserRoleCode      = "role_code"       // 用户角色
+	CtxUserRoleID        = "role_id"         // 用户角色
+	CtxUserPermissions   = "permissions"     // 用户权限
+	CtxUserStatus        = "user_status"     // 用户状态
+	CtxUserLastLoginTime = "last_login_time" // 最后登录时间
+	CtxUserAgentId       = "agent_id"        // 代理ID
+	CtxUserParentAgentId = "parent_agent_id" // 上级代理ID
 
 	// Request related
 	CtxIp                 = "ip"                  // ip

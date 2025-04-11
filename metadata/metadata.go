@@ -172,9 +172,14 @@ func GetRegionFromCtx(ctx context.Context) string {
 	return GetMetadataOrDefault(ctx, CtxRegion, "")
 }
 
-// GetUserRoleFromCtx 从上下文中获取用户角色
-func GetUserRoleFromCtx(ctx context.Context) string {
-	return GetMetadataOrDefault(ctx, CtxUserRole, "")
+// GetUserRoleCodeFromCtx 从上下文中获取用户角色
+func GetUserRoleCodeFromCtx(ctx context.Context) string {
+	return GetMetadataOrDefault(ctx, CtxUserRoleCode, "")
+}
+
+// GetUserRoleIDFromCtx 从上下文中获取用户角色
+func GetUserRoleIDFromCtx(ctx context.Context) int64 {
+	return int64(GetMetadataOrDefault(ctx, CtxUserRoleID, 0))
 }
 
 // GetUserPermissionsFromCtx 从上下文中获取用户权限
@@ -321,7 +326,7 @@ func WithTracing(ctx context.Context, traceID, requestID string) context.Context
 
 // HasAnyRole 检查用户是否拥有指定角色之一
 func HasAnyRole(ctx context.Context, roles ...string) bool {
-	userRole := GetUserRoleFromCtx(ctx)
+	userRole := GetUserRoleCodeFromCtx(ctx)
 	if userRole == "" {
 		return false
 	}
