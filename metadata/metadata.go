@@ -179,7 +179,34 @@ func GetUserRoleCodeFromCtx(ctx context.Context) string {
 
 // GetUserRoleIDFromCtx 从上下文中获取用户角色
 func GetUserRoleIDFromCtx(ctx context.Context) int64 {
-	return int64(GetMetadataOrDefault(ctx, CtxUserRoleID, 0))
+	if ctx == nil {
+		return 0
+	}
+
+	val := ctx.Value(CtxUserRoleID)
+	if val == nil {
+		return 0
+	}
+
+	switch v := val.(type) {
+	case int64:
+		return v
+	case int:
+		return int64(v)
+	case float64:
+		return int64(v)
+	case json.Number:
+		uid, err := v.Int64()
+		if err != nil {
+			logx.Errorf("Failed to convert rold id to int64: %v", err)
+			return 0
+		}
+		return uid
+	case string:
+		return cast.ToInt64(v)
+	default:
+		return cast.ToInt64(val)
+	}
 }
 
 // GetUserPermissionsFromCtx 从上下文中获取用户权限
