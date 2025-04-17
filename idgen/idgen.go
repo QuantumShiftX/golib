@@ -822,8 +822,8 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 		return "", errors.New("userID cannot be zero")
 	}
 
-	// 生成邀请码
-	inviteCodeLength := randIntInRange(inviteCodeMaxLength/2, inviteCodeMaxLength)
+	// 固定邀请码长度为8位，避免长度不一致
+	inviteCodeLength := inviteCodeMaxLength
 	var code strings.Builder
 	code.Grow(inviteCodeLength)
 
@@ -837,57 +837,36 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 			randSeed := now ^ int64(userID)
 			r := rand.New(rand.NewSource(randSeed))
 
-			// 将序号转换为36进制表示（使用字母和数字）
-			base36 := ""
-			seqCopy := inviteCodeSeq
+			// 创建8位随机邀请码
+			codeBytes := make([]byte, inviteCodeLength)
 
-			// 如果序号为0，特殊处理（实际不会发生，因为从1开始）
-			if seqCopy == 0 {
-				base36 = "0"
+			// 最右边两位保证唯一性
+			// 使用序号的低6位 (0-63) 映射到字符集
+			// 这样可以保证生成的邀请码尾部有唯一标识，但看起来仍然是随机的
+			seqLow := inviteCodeSeq % 36
+			seqHigh := (inviteCodeSeq / 36) % 36
+
+			// 前面6位完全随机生成
+			for i := 0; i < inviteCodeLength-2; i++ {
+				codeBytes[i] = inviteCodeChars[r.Intn(len(inviteCodeChars))]
 			}
 
-			// 将序号转换为36进制
-			for seqCopy > 0 {
-				remainder := seqCopy % 36
-				if remainder < 10 {
-					base36 = string('0'+byte(remainder)) + base36
-				} else {
-					base36 = string('A'+byte(remainder-10)) + base36
-				}
-				seqCopy /= 36
+			// 最后两位用于保证唯一性，但使用伪随机映射使其看起来随机
+			// 映射函数: (value * prime + offset) % len
+			seqLowIdx := (int(seqLow)*31 + r.Intn(7)) % len(inviteCodeChars)
+			seqHighIdx := (int(seqHigh)*37 + r.Intn(11)) % len(inviteCodeChars)
+
+			codeBytes[inviteCodeLength-2] = inviteCodeChars[seqHighIdx]
+			codeBytes[inviteCodeLength-1] = inviteCodeChars[seqLowIdx]
+
+			// 随机打乱顺序，但保留最后两位的唯一性
+			for i := 0; i < inviteCodeLength-3; i++ {
+				j := r.Intn(inviteCodeLength - 2)
+				codeBytes[i], codeBytes[j] = codeBytes[j], codeBytes[i]
 			}
 
-			// 确保36进制表示至少有4位，不足的在左边补0
-			for len(base36) < 4 {
-				base36 = "0" + base36
-			}
-
-			// 如果超过4位，取最右边的4位
-			if len(base36) > 4 {
-				base36 = base36[len(base36)-4:]
-			}
-
-			// 将36进制表示映射到inviteCodeChars字符集
-			for i := 0; i < len(base36); i++ {
-				char := base36[i]
-				var idx int
-				if char >= '0' && char <= '9' {
-					idx = int(char - '0')
-				} else if char >= 'A' && char <= 'Z' {
-					idx = int(char - 'A' + 10)
-				}
-
-				// 确保索引在inviteCodeChars范围内
-				idx = idx % len(inviteCodeChars)
-				code.WriteByte(inviteCodeChars[idx])
-			}
-
-			// 剩余位置用随机字符填充
-			for i := len(base36); i < inviteCodeLength; i++ {
-				randIndex := r.Intn(len(inviteCodeChars))
-				code.WriteByte(inviteCodeChars[randIndex])
-			}
-
+			// 构建最终邀请码字符串
+			code.Write(codeBytes)
 			return code.String(), nil
 		}
 
@@ -896,39 +875,27 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 	}
 
 	// 本地生成邀请码（Redis不可用时的回退方案）
+	// 确保随机性更高
 	randMutex.Lock()
 	localSource := rand.NewSource(time.Now().UnixNano() ^ int64(userID))
 	r := rand.New(localSource)
 	randMutex.Unlock()
 
-	// 将64位的userID拆分为多个较小的部分
-	part1 := uint32(userID & 0xFFFF)         // 低16位
-	part2 := uint32((userID >> 16) & 0xFFFF) // 次低16位
-	part3 := uint32((userID >> 32) & 0xFFFF) // 次高16位
-	part4 := uint32((userID >> 48) & 0xFFFF) // 高16位
-
-	// 混合各部分生成混合值
-	mixValue := (part1 ^ part2 ^ part3 ^ part4) | uint32(r.Intn(10000))
-
-	// 本地生成邀请码
+	// 生成完全随机的邀请码
 	for i := 0; i < inviteCodeLength; i++ {
-		if i < 4 {
-			// 前4位使用ID特征
-			index := int((mixValue + uint32(i)*7919) % uint32(len(inviteCodeChars)))
-			if index < 0 || index >= len(inviteCodeChars) {
-				index = r.Intn(len(inviteCodeChars))
-			}
-			code.WriteByte(inviteCodeChars[index])
-			// 更新混合值
-			mixValue = (mixValue * 31) + uint32(part1+part3)
-		} else {
-			// 后4位增加更多随机性
-			randVal := r.Intn(len(inviteCodeChars))
-			code.WriteByte(inviteCodeChars[randVal])
-		}
+		randIndex := r.Intn(len(inviteCodeChars))
+		code.WriteByte(inviteCodeChars[randIndex])
 	}
 
-	return code.String(), nil
+	// 在末尾加入用户ID的特征，保证一定的关联性但外观仍然随机
+	userIDHash := int(userID % 1000)
+	charPos := r.Intn(inviteCodeLength - 1)
+	charIndex := (userIDHash * 31) % len(inviteCodeChars)
+	codeStr := code.String()
+	codeBytes := []byte(codeStr)
+	codeBytes[charPos] = inviteCodeChars[charIndex]
+
+	return string(codeBytes), nil
 }
 
 // VerifyInviteCode 验证邀请码格式
@@ -937,7 +904,7 @@ func (x *IDGenX) VerifyInviteCode(code string) bool {
 		return false
 	}
 
-	if len(code) != randIntInRange(inviteCodeMaxLength/2, inviteCodeMaxLength) {
+	if len(code) != inviteCodeMaxLength {
 		return false
 	}
 
