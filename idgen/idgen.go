@@ -816,13 +816,86 @@ func (x *IDGenX) GenDefaultLongSnowID() (int64, error) {
 	return x.GenIDWithDigits(12)
 }
 
-// GenInviteCode 根据用户ID生成6位邀请码
+// GenInviteCode 根据用户ID生成邀请码
 func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 	if userID == 0 {
 		return "", errors.New("userID cannot be zero")
 	}
 
-	// 使用一个专用的随机源
+	// 生成邀请码
+	inviteCodeLength := randIntInRange(inviteCodeMaxLength/2, inviteCodeMaxLength)
+	var code strings.Builder
+	code.Grow(inviteCodeLength)
+
+	// 使用Redis生成唯一邀请码（如果可用）
+	if x.rdb != nil {
+		// 使用Redis分配一个唯一的邀请码序号
+		inviteCodeSeq, err := x.rdb.Incr(ctx, redisKeyPrefix+"invitecode:seq").Result()
+		if err == nil {
+			// 获取当前时间作为随机种子，结合用户ID
+			now := time.Now().UnixNano()
+			randSeed := now ^ int64(userID)
+			r := rand.New(rand.NewSource(randSeed))
+
+			// 将序号转换为36进制表示（使用字母和数字）
+			base36 := ""
+			seqCopy := inviteCodeSeq
+
+			// 如果序号为0，特殊处理（实际不会发生，因为从1开始）
+			if seqCopy == 0 {
+				base36 = "0"
+			}
+
+			// 将序号转换为36进制
+			for seqCopy > 0 {
+				remainder := seqCopy % 36
+				if remainder < 10 {
+					base36 = string('0'+byte(remainder)) + base36
+				} else {
+					base36 = string('A'+byte(remainder-10)) + base36
+				}
+				seqCopy /= 36
+			}
+
+			// 确保36进制表示至少有4位，不足的在左边补0
+			for len(base36) < 4 {
+				base36 = "0" + base36
+			}
+
+			// 如果超过4位，取最右边的4位
+			if len(base36) > 4 {
+				base36 = base36[len(base36)-4:]
+			}
+
+			// 将36进制表示映射到inviteCodeChars字符集
+			for i := 0; i < len(base36); i++ {
+				char := base36[i]
+				var idx int
+				if char >= '0' && char <= '9' {
+					idx = int(char - '0')
+				} else if char >= 'A' && char <= 'Z' {
+					idx = int(char - 'A' + 10)
+				}
+
+				// 确保索引在inviteCodeChars范围内
+				idx = idx % len(inviteCodeChars)
+				code.WriteByte(inviteCodeChars[idx])
+			}
+
+			// 剩余位置用随机字符填充
+			for i := len(base36); i < inviteCodeLength; i++ {
+				randIndex := r.Intn(len(inviteCodeChars))
+				code.WriteByte(inviteCodeChars[randIndex])
+			}
+
+			return code.String(), nil
+		}
+
+		// 如果Redis操作失败，回退到本地生成
+		log.Printf("Warning: Failed to get invite code sequence from Redis: %v, falling back to local generation", err)
+	}
+
+	// 本地生成邀请码（Redis不可用时的回退方案）
 	randMutex.Lock()
 	localSource := rand.NewSource(time.Now().UnixNano() ^ int64(userID))
 	r := rand.New(localSource)
@@ -837,40 +910,10 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 	// 混合各部分生成混合值
 	mixValue := (part1 ^ part2 ^ part3 ^ part4) | uint32(r.Intn(10000))
 
-	// 生成邀请码
-	inviteCodeLength := randIntInRange(inviteCodeMaxLength/2, inviteCodeMaxLength)
-	var code strings.Builder
-	code.Grow(inviteCodeLength)
-
-	// 使用Redis生成唯一邀请码（如果可用）
-	if x.rdb != nil {
-		// 使用Redis分配一个唯一的邀请码序号
-		inviteCodeSeq, err := x.rdb.Incr(ctx, redisKeyPrefix+"invitecode:seq").Result()
-		if err == nil {
-			// 使用确定的算法将序号转换为邀请码
-			// 将序号混合用户ID特征，确保同一用户生成的邀请码不会太相似
-			mixedSeq := inviteCodeSeq ^ int64(part1) ^ int64(part3)
-
-			// 生成邀请码
-			for i := 0; i < inviteCodeLength; i++ {
-				// 确定性地选择字符
-				charIndex := int((mixedSeq + int64(i)*79) % int64(len(inviteCodeChars)))
-				code.WriteByte(inviteCodeChars[charIndex])
-				// 更新混合值
-				mixedSeq = (mixedSeq * 31) + int64(part2)
-			}
-
-			return code.String(), nil
-		}
-
-		// 如果Redis操作失败，回退到本地生成
-		log.Printf("Warning: Failed to get invite code sequence from Redis: %v, falling back to local generation", err)
-	}
-
-	// 本地生成邀请码（Redis不可用时的回退方案）
+	// 本地生成邀请码
 	for i := 0; i < inviteCodeLength; i++ {
-		if i < 3 {
-			// 前3位使用ID特征
+		if i < 4 {
+			// 前4位使用ID特征
 			index := int((mixValue + uint32(i)*7919) % uint32(len(inviteCodeChars)))
 			if index < 0 || index >= len(inviteCodeChars) {
 				index = r.Intn(len(inviteCodeChars))
@@ -879,7 +922,7 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 			// 更新混合值
 			mixValue = (mixValue * 31) + uint32(part1+part3)
 		} else {
-			// 后3位增加更多随机性
+			// 后4位增加更多随机性
 			randVal := r.Intn(len(inviteCodeChars))
 			code.WriteByte(inviteCodeChars[randVal])
 		}
