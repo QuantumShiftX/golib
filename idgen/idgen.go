@@ -20,8 +20,8 @@ import (
 const (
 	// 邀请码字符集，去掉了容易混淆的字符
 	inviteCodeChars = "1234567890ABCDEFGHIJKLMNPQRSTUVWXYZ"
-	// 邀请码长度
-	inviteCodeLength = 8
+	// 邀请码长度 最大长度
+	inviteCodeMaxLength = 8
 	// 最小允许的ID位数
 	minAllowedDigits = 8
 	// 最大允许的ID位数
@@ -838,6 +838,7 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 	mixValue := (part1 ^ part2 ^ part3 ^ part4) | uint32(r.Intn(10000))
 
 	// 生成邀请码
+	inviteCodeLength := randIntInRange(inviteCodeMaxLength/2, inviteCodeMaxLength)
 	var code strings.Builder
 	code.Grow(inviteCodeLength)
 
@@ -893,7 +894,7 @@ func (x *IDGenX) VerifyInviteCode(code string) bool {
 		return false
 	}
 
-	if len(code) != inviteCodeLength {
+	if len(code) != randIntInRange(inviteCodeMaxLength/2, inviteCodeMaxLength) {
 		return false
 	}
 
@@ -1076,4 +1077,13 @@ func sum(data []byte) int {
 		sum += int(b)
 	}
 	return sum
+}
+
+// 返回 [min, max] 区间内的随机整数
+func randIntInRange(min, max int) int {
+	if min > max {
+		min, max = max, min
+	}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return r.Intn(max-min+1) + min
 }

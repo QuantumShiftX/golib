@@ -11,6 +11,8 @@ require (
 	github.com/coocood/freecache v1.2.4
 	github.com/dtm-labs/rockscache v0.1.1
 	github.com/go-kratos/kratos/v2 v2.8.4
+	github.com/go-playground/locales v0.14.1
+	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/go-resty/resty/v2 v2.16.2
@@ -23,6 +25,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sony/sonyflake v1.2.0
+	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/cast v1.7.0
 	github.com/zeromicro/go-zero v1.7.4
 	github.com/zeromicro/x v0.0.0-20240408115609-8224c482b07e
@@ -71,8 +74,6 @@ require (
 	github.com/go-faster/errors v0.7.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-playground/locales v0.14.1 // indirect
-	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
