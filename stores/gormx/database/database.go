@@ -47,7 +47,7 @@ func NewEngine(c config.Config, dialector gorm.Dialector, opt ...gorm.Option) (*
 		sqlDB.SetMaxOpenConns(c.MaxOpenConn)
 	}
 	if c.MaxLifetime > 0 {
-		sqlDB.SetConnMaxLifetime(time.Duration(c.MaxLifetime) * time.Minute)
+		sqlDB.SetConnMaxLifetime(time.Duration(c.MaxLifetime) * time.Second)
 	}
 
 	// 读写分离
