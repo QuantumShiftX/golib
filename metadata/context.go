@@ -19,7 +19,7 @@ type ContextOptions struct {
 // DefaultOptions 返回默认选项配置
 func DefaultOptions() *ContextOptions {
 	return &ContextOptions{
-		Timeout:    10 * time.Second,
+		Timeout:    30 * time.Second,
 		WithTrace:  true,
 		WithCancel: true,
 	}
