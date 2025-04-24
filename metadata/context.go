@@ -60,6 +60,15 @@ func Background(opts *ContextOptions) (context.Context, context.CancelFunc) {
 	return New(context.Background(), opts)
 }
 
+// DefaultBackground 从空上下文创建一个新的上下文
+func DefaultBackground() (context.Context, context.CancelFunc) {
+	return New(context.Background(), &ContextOptions{
+		Timeout:    10 * time.Second,
+		WithTrace:  true,
+		WithCancel: true,
+	})
+}
+
 // FromRequest 从请求上下文创建一个新的分离上下文
 // 适用于后台任务，不受原始请求上下文取消影响
 func FromRequest(reqCtx context.Context, opts *ContextOptions) (context.Context, context.CancelFunc) {
