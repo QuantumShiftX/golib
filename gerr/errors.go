@@ -68,3 +68,14 @@ func FromError(err error) *GError {
 	}
 	return &GError{Code: ErrCode(st.Code()), Msg: st.Message()}
 }
+
+// IsGrpcStatusError 检查错误是否是通过New()创建的gRPC状态错误
+func IsGrpcStatusError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// 尝试将错误转换为gRPC status
+	_, ok := status.FromError(err)
+	return ok
+}
