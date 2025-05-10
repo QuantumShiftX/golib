@@ -112,42 +112,47 @@ func ConvertExchangeRateToInt64(exchangeRate string) (int64, error) {
 	return result, nil
 }
 
+// ConvertUSDTToCurrency 将USDT金额兑换成指定货币
+// exchangeRate: int64类型，表示 1 USDT 兑换的目标货币数量 * 1000000
+//
+//	例如: 1 USDT = 0.998 USD，则 exchangeRate = 998000
+//
+// usdtAmount: 要兑换的USDT金额（以Wei为单位）
+// 返回兑换后的目标货币金额（以Wei为单位）
+func ConvertUSDTToCurrency(exchangeRate int64, usdtAmount int64) (int64, error) {
+	// 验证汇率有效性
+	if exchangeRate <= 0 {
+		return 0, fmt.Errorf("汇率必须大于0，收到: %v", exchangeRate)
+	}
+
+	// 计算目标货币金额 = USDT金额 * (汇率 / 1000000)
+	// 等价于 = USDT金额 * 汇率 / 1000000
+	result := decimal.NewFromInt(usdtAmount).
+		Mul(decimal.NewFromInt(exchangeRate)).
+		Div(decimal.NewFromInt(int64(Wei))).
+		IntPart()
+
+	return result, nil
+}
+
 // ConvertCurrencyToUSDT 将指定货币金额兑换成USDT
-// exchangeRate: "1000000:790"格式的汇率（1000000单位货币=790USDT）
+// exchangeRate: int64类型，表示 1 USDT 兑换的目标货币数量 * 1000000
+//
+//	例如: 1 USDT = 0.998 USD，则 exchangeRate = 998000
+//
 // amount: 要兑换的指定货币金额（以Wei为单位）
 // 返回兑换后的USDT金额（以Wei为单位）
-func ConvertCurrencyToUSDT(exchangeRate string, amount int64) (int64, error) {
-	// 分割汇率字符串
-	parts := strings.Split(exchangeRate, ":")
-	if len(parts) != 2 {
-		return 0, fmt.Errorf("无效的汇率格式，应为'%d:X'格式", Wei)
+func ConvertCurrencyToUSDT(exchangeRate int64, amount int64) (int64, error) {
+	// 验证汇率有效性
+	if exchangeRate <= 0 {
+		return 0, fmt.Errorf("汇率必须大于0，收到: %v", exchangeRate)
 	}
 
-	// 解析基础货币值
-	baseCurrency, err := cast.ToInt64E(parts[0])
-	if err != nil {
-		return 0, fmt.Errorf("解析基础货币值失败: %v", err)
-	}
-	if baseCurrency != int64(Wei) {
-		return 0, fmt.Errorf("基础货币值应为%d，收到: %v", Wei, baseCurrency)
-	}
-
-	// 解析USDT值
-	usdtValue, err := cast.ToInt64E(parts[1])
-	if err != nil {
-		return 0, fmt.Errorf("解析USDT值失败: %v", err)
-	}
-
-	// 避免除以零
-	if usdtValue == 0 {
-		return 0, fmt.Errorf("USDT值不能为零")
-	}
-
-	// 计算: (amount * usdtValue) / baseCurrency
-	// 如果1000000单位货币 = 790 USDT，那么 x单位货币 = (x * 790) / 1000000 USDT
+	// 计算USDT金额 = 目标货币金额 / (汇率 / 1000000)
+	// 等价于 = 目标货币金额 * 1000000 / 汇率
 	result := decimal.NewFromInt(amount).
-		Mul(decimal.NewFromInt(usdtValue)).
-		Div(decimal.NewFromInt(baseCurrency)).
+		Mul(decimal.NewFromInt(int64(Wei))).
+		Div(decimal.NewFromInt(exchangeRate)).
 		IntPart()
 
 	return result, nil
