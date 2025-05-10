@@ -157,3 +157,31 @@ func ConvertCurrencyToUSDT(exchangeRate int64, amount int64) (int64, error) {
 
 	return result, nil
 }
+
+// CalculateFee 计算手续费金额，使用 decimal 避免溢出和精度问题
+// 参数:
+//
+//	amount: 原始金额 (已经乘以1000000的int64值)
+//	rateInMillionths: 以百万分之一为单位的费率 (例如，20% = 200000)
+//
+// 返回:
+//
+//	计算后的手续费金额 (int64)
+func CalculateFee(amount int64, rateInMillionths int64) int64 {
+	// 定义百万分之一的除数
+	million := decimal.NewFromInt(int64(Wei))
+
+	// 将 amount 转换为 decimal 并除以 1000000，得到实际金额
+	amountDec := decimal.NewFromInt(amount).Div(million)
+
+	// 将 rateInMillionths 转换为 decimal 并除以 1000000，得到实际费率（如 0.2 表示 20%）
+	rateDec := decimal.NewFromInt(rateInMillionths).Div(million)
+
+	// 计算手续费：amount * rate
+	feeDec := amountDec.Mul(rateDec)
+
+	// 将结果乘以 1000000，转换为 int64
+	result := feeDec.Mul(million).Round(0).IntPart()
+
+	return result
+}
