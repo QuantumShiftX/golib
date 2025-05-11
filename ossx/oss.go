@@ -59,7 +59,7 @@ func newOSSStorage(sc configx.StorageConfig) (Storage, error) {
 	return &ossStorage{
 		client:     client,
 		bucketName: sc.Bucket,
-		endpoint:   sc.Region,
+		endpoint:   endpoint,
 		cdnDomain:  sc.CdnDomain,
 	}, nil
 }
