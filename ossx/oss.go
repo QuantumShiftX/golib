@@ -64,7 +64,7 @@ func (s *ossStorage) Upload(ctx context.Context, file io.Reader, path, contentTy
 		Key:         oss.Ptr(path),
 		Body:        file,
 		ContentType: oss.Ptr(contentType),
-		Acl:         oss.ObjectACLPublicRead,
+		//Acl:         oss.ObjectACLPublicRead,
 	}
 
 	// 执行文件上传
