@@ -66,8 +66,8 @@ func getHttpStatusFromError(v any) int {
 	case *status.Status:
 		code = int(data.Code())
 	case error:
-		// 普通 error 默认返回 500
-		return http.StatusInternalServerError
+		// 普通 error 默认返回 400
+		return http.StatusBadRequest
 	default:
 		// 成功情况
 		return http.StatusOK
@@ -75,6 +75,8 @@ func getHttpStatusFromError(v any) int {
 
 	// 将业务错误码映射到 HTTP 状态码
 	switch code {
+	case 400:
+		return http.StatusBadRequest
 	case 401:
 		return http.StatusUnauthorized
 	case 403:
