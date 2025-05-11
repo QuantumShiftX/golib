@@ -34,6 +34,17 @@ func newOSSStorage(sc configx.StorageConfig) (Storage, error) {
 		return nil, fmt.Errorf("oss endpoint is required")
 	}
 
+	// 标准化 endpoint 格式
+	endpoint := sc.Region
+	if !strings.Contains(endpoint, ".aliyuncs.com") {
+		// 如果只提供了区域ID，需要构建完整的endpoint
+		if strings.HasPrefix(endpoint, "oss-") {
+			endpoint = endpoint + ".aliyuncs.com"
+		} else {
+			endpoint = "oss-" + endpoint + ".aliyuncs.com"
+		}
+	}
+
 	// 创建凭证提供者
 	cred := credentials.NewStaticCredentialsProvider(sc.AccessKey, sc.SecretKey)
 
