@@ -156,12 +156,12 @@ func (s *CosStorage) GetObjectInfo(ctx context.Context, path string) (*cos.Objec
 }
 
 // CreateSignedURL 创建带签名的临时访问URL（扩展功能）
-func (s *CosStorage) CreateSignedURL(ctx context.Context, path string, expiration int64) (string, error) {
+func (s *CosStorage) CreateSignedURL(ctx context.Context, path string, expiration time.Duration) (string, error) {
 	// 标准化路径
 	path = strings.TrimPrefix(path, "/")
 
 	// 创建带签名的临时URL
-	signedURL, err := s.client.Object.GetPresignedURL(ctx, http.MethodGet, path, s.client.GetCredential().SecretID, s.client.GetCredential().SecretKey, time.Duration(expiration), nil)
+	signedURL, err := s.client.Object.GetPresignedURL(ctx, http.MethodGet, path, s.client.GetCredential().SecretID, s.client.GetCredential().SecretKey, expiration, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create signed URL: %w", err)
 	}

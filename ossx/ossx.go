@@ -5,6 +5,7 @@ import (
 	"fmt"
 	configx "github.com/QuantumShiftX/golib/ossx/config"
 	"github.com/google/uuid"
+	"github.com/zeromicro/go-zero/core/logx"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -25,12 +27,16 @@ const (
 type Storage interface {
 	Upload(ctx context.Context, file io.Reader, path, contentType string) (string, error)
 	Delete(ctx context.Context, path string) error
+	// 获取签名URL的方法
+	CreateSignedURL(ctx context.Context, path string, expiration time.Duration) (string, error)
 }
 
 // UploadResult 文件上传结果
 type UploadResult struct {
-	// 完整URL
+	// 完整URL (原始URL，可能无法直接访问)
 	URL string `json:"url"`
+	// 签名URL (可以直接访问的URL)
+	SignedURL string `json:"signed_url"`
 	// 相对路径
 	RelativePath string `json:"relative_path"`
 	// 文件名
@@ -41,6 +47,8 @@ type UploadResult struct {
 	Size int64 `json:"size"`
 	// 存储类型
 	StorageType string `json:"storage_type"`
+	// 签名URL过期时间（Unix时间戳）
+	SignedURLExpire int64 `json:"signed_url_expire,omitempty"`
 }
 
 var (
@@ -182,15 +190,31 @@ func (u *UploadManager) Upload(ctx context.Context, storageType string, file io.
 		return nil, fmt.Errorf("failed to upload file: %w", err)
 	}
 
+	// 生成签名URL（24小时有效期）
+	signedURL, err := storage.CreateSignedURL(ctx, path, 24*time.Hour)
+	if err != nil {
+		// 如果生成签名URL失败，仍然返回原始结果，但记录错误
+		logx.WithContext(ctx).Errorf("failed to generate signed URL: %v", err)
+		signedURL = url // 使用原始URL作为fallback
+	}
+
 	// 返回上传结果
-	return &UploadResult{
+	result := &UploadResult{
 		URL:          url,
+		SignedURL:    signedURL,
 		RelativePath: "/" + strings.TrimPrefix(path, "/"),
 		FileName:     fileName,
 		FileType:     fileType,
 		Size:         header.Size,
 		StorageType:  storageType,
-	}, nil
+	}
+
+	// 如果是签名URL，添加过期时间
+	if signedURL != url {
+		result.SignedURLExpire = time.Now().Add(24 * time.Hour).Unix()
+	}
+
+	return result, nil
 }
 
 // UploadWithUid 直接使用userId上传文件（简化版）
@@ -205,6 +229,16 @@ func (u *UploadManager) Delete(ctx context.Context, storageType string, path str
 		return fmt.Errorf("storage type %s not initialized", storageType)
 	}
 	return storage.Delete(ctx, path)
+}
+
+// GetSignedURL 为已存在的文件生成签名URL
+func (u *UploadManager) GetSignedURL(ctx context.Context, storageType string, path string, expiration time.Duration) (string, error) {
+	storage, ok := u.storages[storageType]
+	if !ok {
+		return "", fmt.Errorf("storage type %s not initialized", storageType)
+	}
+
+	return storage.CreateSignedURL(ctx, path, expiration)
 }
 
 // detectContentType 检测文件内容类型

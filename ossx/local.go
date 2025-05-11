@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // localStorage 实现本地文件系统存储
@@ -326,4 +327,9 @@ func (l *localStorage) ServeFile(w http.ResponseWriter, r *http.Request, path st
 
 	// 使用http.ServeFile提供文件服务
 	http.ServeFile(w, r, fullPath)
+}
+
+// CreateSignedURL 创建带签名的临时访问URL
+func (l *localStorage) CreateSignedURL(ctx context.Context, path string, expiration time.Duration) (string, error) {
+	return "", nil
 }

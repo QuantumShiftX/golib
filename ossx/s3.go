@@ -124,8 +124,8 @@ func (s *s3Storage) Delete(ctx context.Context, path string) error {
 	return nil
 }
 
-// CreatePresignedURL 创建预签名URL（扩展功能）
-func (s *s3Storage) CreatePresignedURL(ctx context.Context, path string, expiration time.Duration) (string, error) {
+// CreateSignedURL 创建预签名URL（扩展功能）
+func (s *s3Storage) CreateSignedURL(ctx context.Context, path string, expiration time.Duration) (string, error) {
 	// 标准化路径
 	path = strings.TrimPrefix(path, "/")
 
