@@ -6,6 +6,7 @@ import (
 	configx "github.com/QuantumShiftX/golib/ossx/config"
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/mr"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -49,6 +50,14 @@ type UploadResult struct {
 	StorageType string `json:"storage_type"`
 	// 签名URL过期时间（Unix时间戳）
 	SignedURLExpire int64 `json:"signed_url_expire,omitempty"`
+}
+
+// SignedURLResult 批量签名URL结果
+type SignedURLResult struct {
+	RelativePath string `json:"relative_path"`
+	SignedURL    string `json:"signed_url"`
+	Error        string `json:"error,omitempty"`
+	Expire       int64  `json:"expire"`
 }
 
 var (
@@ -239,6 +248,83 @@ func (u *UploadManager) GetSignedURL(ctx context.Context, storageType string, pa
 	}
 
 	return storage.CreateSignedURL(ctx, path, expiration)
+}
+
+// GetSignedURLs 批量并发获取签名URL
+func (u *UploadManager) GetSignedURLs(ctx context.Context, storageType string, paths []string, expiration time.Duration) ([]SignedURLResult, error) {
+	storage, ok := u.storages[storageType]
+	if !ok {
+		return nil, fmt.Errorf("storage type %s not initialized", storageType)
+	}
+
+	if len(paths) == 0 {
+		return []SignedURLResult{}, nil
+	}
+
+	// 使用 mr.MapReduce 并发获取签名URL
+	results, err := mr.MapReduce(
+		// generate: 生成待处理的数据
+		func(source chan<- interface{}) {
+			for i, path := range paths {
+				source <- struct {
+					index int
+					path  string
+				}{i, path}
+			}
+		},
+
+		// mapper: 并发处理每个path
+		func(item interface{}, writer mr.Writer[*SignedURLResult], cancel func(error)) {
+			input := item.(struct {
+				index int
+				path  string
+			})
+
+			signedURL, err := storage.CreateSignedURL(ctx, input.path, expiration)
+			result := &SignedURLResult{
+				RelativePath: input.path,
+				SignedURL:    signedURL,
+				Error:        "",
+				Expire:       time.Now().Add(expiration).Unix(),
+			}
+
+			if err != nil {
+				result.Error = err.Error()
+				result.SignedURL = ""
+				result.Expire = 0
+				// 记录错误但不取消其他任务
+				logx.WithContext(ctx).Errorf("failed to get signed URL for %s: %v", input.path, err)
+			}
+
+			// 写入结果，保留索引信息用于排序
+			writer.Write(result)
+		},
+
+		// reducer: 收集结果
+		func(pipe <-chan *SignedURLResult, writer mr.Writer[[]SignedURLResult], cancel func(error)) {
+			// 使用 slice 保持原始顺序
+			results := make([]SignedURLResult, len(paths))
+
+			for result := range pipe {
+				// 找到结果对应的原始位置
+				for i, path := range paths {
+					if path == result.RelativePath {
+						results[i] = *result
+						break
+					}
+				}
+			}
+
+			writer.Write(results)
+		},
+		mr.WithWorkers(10), // 设置最大并发数为10
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get signed URLs: %w", err)
+	}
+
+	return results, nil
 }
 
 // detectContentType 检测文件内容类型
