@@ -30,7 +30,11 @@ func (base *OperationBaseModel) BeforeSave(tx *gorm.DB) (err error) {
 		base.Operator = metadata.GetUsernameFromCtx(ctx)
 	}
 	tx.Statement.SetColumn("operation_time", base.OperationTime)
-	tx.Statement.SetColumn("operator_id", base.OperatorID)
-	tx.Statement.SetColumn("operator", base.Operator)
+	if base.OperatorID != 0 {
+		tx.Statement.SetColumn("operator_id", base.OperatorID)
+	}
+	if base.Operator != "" {
+		tx.Statement.SetColumn("operator", base.Operator)
+	}
 	return nil
 }
