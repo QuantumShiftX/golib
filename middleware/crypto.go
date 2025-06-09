@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"github.com/QuantumShiftX/golib/config"
 	"github.com/QuantumShiftX/golib/crypto"
+	"github.com/zeromicro/go-zero/core/jsonx"
 	"github.com/zeromicro/go-zero/core/logx"
 	"io"
 	"net/http"
-)
-
-import (
-	"encoding/json"
-	"log"
 )
 
 // CryptoMiddleware 加密中间件（优化版）
@@ -28,20 +24,20 @@ func CryptoMiddleware(cfg *config.CryptoConfig) Handler {
 			// 检查路径是否需要加密
 			if !cfg.ShouldEncrypt(r.URL.Path) {
 				if cfg.Debug {
-					log.Printf("[Crypto] Path %s does not need encryption", r.URL.Path)
+					logx.Infof("[Crypto] Path %s does not need encryption", r.URL.Path)
 				}
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			if cfg.Debug {
-				log.Printf("[Crypto] Processing encryption for path: %s", r.URL.Path)
+				logx.Infof("[Crypto] Processing encryption for path: %s", r.URL.Path)
 			}
 
 			// 解密请求
 			if err := decryptHTTPRequest(r, cfg); err != nil {
 				if cfg.Debug {
-					log.Printf("[Crypto] Request decryption failed: %v", err)
+					logx.Infof("[Crypto] Request decryption failed: %v", err)
 				}
 				if cfg.FailOnError {
 					http.Error(w, fmt.Sprintf("Request decryption failed: %v", err), http.StatusBadRequest)
@@ -58,7 +54,7 @@ func CryptoMiddleware(cfg *config.CryptoConfig) Handler {
 			// 加密响应
 			if err := encryptHTTPResponse(recorder, w, cfg); err != nil {
 				if cfg.Debug {
-					log.Printf("[Crypto] Response encryption failed: %v", err)
+					logx.Infof("[Crypto] Response encryption failed: %v", err)
 				}
 				if cfg.FailOnError {
 					http.Error(w, fmt.Sprintf("Response encryption failed: %v", err), http.StatusInternalServerError)
@@ -108,13 +104,13 @@ func decryptHTTPRequest(r *http.Request, cfg *config.CryptoConfig) error {
 	}
 
 	// 重新序列化为JSON
-	decryptedJSON, err := json.Marshal(decryptedData)
+	decryptedJSON, err := jsonx.Marshal(decryptedData)
 	if err != nil {
 		return fmt.Errorf("marshal decrypted data failed: %w", err)
 	}
 
 	if cfg.Debug {
-		logx.Infof("[Crypto] Request decrypted successfully, decrypted length: %d", len(decryptedJSON))
+		logx.Infof("[Crypto] Request decrypted successfully, decrypted length: %d data: %+v", len(decryptedJSON), decryptedData)
 	}
 
 	// 替换请求体
@@ -145,7 +141,7 @@ func encryptHTTPResponse(recorder *ResponseRecorder, w http.ResponseWriter, cfg 
 
 	// 解析原始响应
 	var originalData interface{}
-	if err := json.Unmarshal(responseData, &originalData); err != nil {
+	if err := jsonx.Unmarshal(responseData, &originalData); err != nil {
 		return fmt.Errorf("unmarshal response data failed: %w", err)
 	}
 
@@ -156,11 +152,11 @@ func encryptHTTPResponse(recorder *ResponseRecorder, w http.ResponseWriter, cfg 
 	}
 
 	if cfg.Debug {
-		logx.Infof("[Crypto] Response encrypted successfully")
+		logx.Infof("[Crypto] Response encrypted successfully data: %+v", originalData)
 	}
 
 	// 序列化加密响应
-	encryptedJSON, err := json.Marshal(encryptedData)
+	encryptedJSON, err := jsonx.Marshal(encryptedData)
 	if err != nil {
 		return fmt.Errorf("marshal encrypted response failed: %w", err)
 	}
