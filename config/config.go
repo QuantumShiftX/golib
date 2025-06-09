@@ -7,9 +7,9 @@ import (
 
 // GlobalConfig 全局配置
 type GlobalConfig struct {
-	Debug      bool              `json:"debug" yaml:"debug"`
-	Crypto     *CryptoConfig     `json:"crypto,omitempty" yaml:"crypto,omitempty"`
-	Middleware *MiddlewareConfig `json:"middleware,omitempty" yaml:"middleware,omitempty"`
+	Debug      bool              `json:"debug,optional" yaml:"debug"`
+	Crypto     *CryptoConfig     `json:"crypto,optional,omitempty" yaml:"crypto,omitempty"`
+	Middleware *MiddlewareConfig `json:"middleware,optional,omitempty" yaml:"middleware,omitempty"`
 }
 
 // DefaultGlobalConfig 默认全局配置

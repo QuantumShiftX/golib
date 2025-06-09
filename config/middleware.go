@@ -9,38 +9,38 @@ import (
 
 // MiddlewareConfig 中间件配置
 type MiddlewareConfig struct {
-	EnableCORS     bool                   `json:"enable_cors" yaml:"enable_cors"`
-	EnableLogging  bool                   `json:"enable_logging" yaml:"enable_logging"`
-	EnableRecovery bool                   `json:"enable_recovery" yaml:"enable_recovery"`
-	CORS           *CORSConfig            `json:"cors,omitempty" yaml:"cors,omitempty"`
-	Logging        *LoggingConfig         `json:"logging,omitempty" yaml:"logging,omitempty"`
-	Custom         map[string]interface{} `json:"custom,omitempty" yaml:"custom,omitempty"`
+	EnableCORS     bool                   `json:"enable_cors,optional" yaml:"enable_cors"`
+	EnableLogging  bool                   `json:"enable_logging,optional" yaml:"enable_logging"`
+	EnableRecovery bool                   `json:"enable_recovery,optional" yaml:"enable_recovery"`
+	CORS           *CORSConfig            `json:"cors,optional,omitempty" yaml:"cors,omitempty"`
+	Logging        *LoggingConfig         `json:"logging,optional,omitempty" yaml:"logging,omitempty"`
+	Custom         map[string]interface{} `json:"custom,optional,omitempty" yaml:"custom,omitempty"`
 }
 
 // CORSConfig CORS配置
 type CORSConfig struct {
 	// 基本配置
-	AllowOrigins     []string `json:"allow_origins" yaml:"allow_origins"`         // 允许的来源
-	AllowMethods     []string `json:"allow_methods" yaml:"allow_methods"`         // 允许的方法
-	AllowHeaders     []string `json:"allow_headers" yaml:"allow_headers"`         // 允许的请求头
-	ExposeHeaders    []string `json:"expose_headers" yaml:"expose_headers"`       // 暴露的响应头
-	AllowCredentials bool     `json:"allow_credentials" yaml:"allow_credentials"` // 是否允许凭证
-	MaxAge           int      `json:"max_age" yaml:"max_age"`                     // 预检请求缓存时间（秒）
+	AllowOrigins     []string `json:"allow_origins,optional" yaml:"allow_origins"`         // 允许的来源
+	AllowMethods     []string `json:"allow_methods,optional" yaml:"allow_methods"`         // 允许的方法
+	AllowHeaders     []string `json:"allow_headers,optional" yaml:"allow_headers"`         // 允许的请求头
+	ExposeHeaders    []string `json:"expose_headers,optional" yaml:"expose_headers"`       // 暴露的响应头
+	AllowCredentials bool     `json:"allow_credentials,optional" yaml:"allow_credentials"` // 是否允许凭证
+	MaxAge           int      `json:"max_age,optional" yaml:"max_age"`                     // 预检请求缓存时间（秒）
 
 	// 高级配置
-	AllowWildcard   bool `json:"allow_wildcard" yaml:"allow_wildcard"`     // 是否允许通配符
-	AllowWebSockets bool `json:"allow_websockets" yaml:"allow_websockets"` // 是否允许WebSocket
-	Debug           bool `json:"debug" yaml:"debug"`                       // 是否开启调试模式
-	OptionsResponse int  `json:"options_response" yaml:"options_response"` // OPTIONS请求的响应状态码
+	AllowWildcard   bool `json:"allow_wildcard,optional" yaml:"allow_wildcard"`     // 是否允许通配符
+	AllowWebSockets bool `json:"allow_websockets,optional" yaml:"allow_websockets"` // 是否允许WebSocket
+	Debug           bool `json:"debug,optional" yaml:"debug"`                       // 是否开启调试模式
+	OptionsResponse int  `json:"options_response,optional" yaml:"options_response"` // OPTIONS请求的响应状态码
 }
 
 // LoggingConfig 日志配置
 type LoggingConfig struct {
-	Level         string `json:"level" yaml:"level"`
-	Format        string `json:"format" yaml:"format"`
-	OutputPath    string `json:"output_path" yaml:"output_path"`
-	EnableTrace   bool   `json:"enable_trace" yaml:"enable_trace"`
-	EnableMetrics bool   `json:"enable_metrics" yaml:"enable_metrics"`
+	Level         string `json:"level,optional" yaml:"level"`
+	Format        string `json:"format,optional" yaml:"format"`
+	OutputPath    string `json:"output_path,optional" yaml:"output_path"`
+	EnableTrace   bool   `json:"enable_trace,optional" yaml:"enable_trace"`
+	EnableMetrics bool   `json:"enable_metrics,optional" yaml:"enable_metrics"`
 }
 
 // DefaultMiddlewareConfig 默认中间件配置

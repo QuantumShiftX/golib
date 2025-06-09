@@ -8,12 +8,12 @@ import (
 
 // CryptoConfig 加密配置
 type CryptoConfig struct {
-	Enable      bool     `json:"enable" yaml:"enable"`
-	Key         string   `json:"key" yaml:"key"`
-	EnableURI   []string `json:"enable_uri" yaml:"enable_uri"`
-	FailOnError bool     `json:"fail_on_error" yaml:"fail_on_error"`
-	Algorithm   string   `json:"algorithm" yaml:"algorithm"`
-	Debug       bool     `json:"debug" yaml:"debug"`
+	Enable      bool     `json:"enable,optional" yaml:"enable"`
+	Key         string   `json:"key,optional" yaml:"key"`
+	EnableURI   []string `json:"enable_uri,optional" yaml:"enable_uri"`
+	FailOnError bool     `json:"fail_on_error,optional" yaml:"fail_on_error"`
+	Algorithm   string   `json:"algorithm,optional" yaml:"algorithm"`
+	Debug       bool     `json:"debug,optional" yaml:"debug"`
 }
 
 // DefaultCryptoConfig 默认加密配置
