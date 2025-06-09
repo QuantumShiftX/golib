@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// LoggingMiddleware 日志中间件（优化版）
+// LoggingMiddleware 日志中间件
 func LoggingMiddleware(cfg *config.LoggingConfig) Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,8 +43,8 @@ func LoggingMiddleware(cfg *config.LoggingConfig) Handler {
 // logRequest 记录请求信息
 func logRequest(r *http.Request, cfg *config.LoggingConfig) {
 	if cfg.Format == "json" {
-		log.Printf(`{"level":"info","msg":"request started","method":"%s","path":"%s","remote_addr":"%s","user_agent":"%s"}`,
-			r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+		log.Printf(`{"level":"info","msg":"request started","method":"%s","path":"%s","remote_addr":"%s"}`,
+			r.Method, r.URL.Path, r.RemoteAddr)
 	} else {
 		log.Printf("Started %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
 	}
@@ -58,8 +58,8 @@ func logResponse(r *http.Request, recorder *ResponseRecorder, duration time.Dura
 	}
 
 	if cfg.Format == "json" {
-		log.Printf(`{"level":"info","msg":"request completed","method":"%s","path":"%s","status":%d,"duration":"%v","size":%d,"user_agent":"%s"}`,
-			r.Method, r.URL.Path, recorder.Status(), duration, recorder.Size(), r.UserAgent())
+		log.Printf(`{"level":"info","msg":"request completed","method":"%s","path":"%s","status":%d,"duration":"%v","size":%d}`,
+			r.Method, r.URL.Path, recorder.Status(), duration, recorder.Size())
 	} else {
 		log.Printf("Completed %s %s - %d in %v (%d bytes)",
 			r.Method, r.URL.Path, recorder.Status(), duration, recorder.Size())
@@ -74,16 +74,13 @@ func writeRecordedResponse(recorder *ResponseRecorder, w http.ResponseWriter) {
 	}
 
 	// 写入状态码和响应体
-	if recorder.IsWritten() {
-		w.WriteHeader(recorder.Status())
-	}
-	if recorder.Size() > 0 {
-		w.Write(recorder.Body().Bytes())
-	}
+	w.WriteHeader(recorder.Status())
+	w.Write(recorder.Body().Bytes())
 }
 
 // recordMetrics 记录指标
 func recordMetrics(r *http.Request, recorder *ResponseRecorder, duration time.Duration) {
-	fmt.Printf("[Metrics] %s %s - %d - %v - %d bytes - %s\n",
-		r.Method, r.URL.Path, recorder.Status(), duration, recorder.Size(), r.UserAgent())
+	// 这里可以集成到指标系统，如Prometheus
+	fmt.Printf("[Metrics] %s %s - %d - %v - %d bytes\n",
+		r.Method, r.URL.Path, recorder.Status(), duration, recorder.Size())
 }

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"log"
+	"github.com/zeromicro/go-zero/core/logx"
 	"net/http"
 	"runtime"
 )
@@ -23,7 +23,7 @@ func RecoveryWithConfig(enableStackTrace bool, customHandler func(interface{}, *
 						if enableStackTrace {
 							logPanicWithStack(err, r)
 						} else {
-							log.Printf("Panic recovered: %v", err)
+							logx.Infof("Panic recovered: %v", err)
 						}
 					}
 
@@ -45,10 +45,10 @@ func logPanicWithStack(err interface{}, r *http.Request) {
 	stack := make([]byte, 4096)
 	length := runtime.Stack(stack, false)
 
-	log.Printf("Panic recovered: %v", err)
-	log.Printf("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
-	log.Printf("User-Agent: %s", r.UserAgent())
-	log.Printf("Stack trace:\n%s", stack[:length])
+	logx.Infof("Panic recovered: %v", err)
+	logx.Infof("Request: %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+	logx.Infof("User-Agent: %s", r.UserAgent())
+	logx.Infof("Stack trace:\n%s", stack[:length])
 }
 
 // isResponseWritten 检查响应是否已写入（改进版）

@@ -3,8 +3,8 @@ package middleware
 import (
 	"github.com/QuantumShiftX/golib/config"
 	"github.com/QuantumShiftX/golib/metadata"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,7 +29,7 @@ func CORSMiddleware(cfg *config.CORSConfig) Handler {
 			origin := r.Header.Get("Origin")
 
 			if cfg.Debug {
-				log.Printf("[CORS] Method=%s, Origin=%s, Path=%s", r.Method, origin, r.URL.Path)
+				logx.Infof("[CORS] Method=%s, Origin=%s, Path=%s", r.Method, origin, r.URL.Path)
 			}
 
 			// 设置CORS头部
@@ -39,7 +39,7 @@ func CORSMiddleware(cfg *config.CORSConfig) Handler {
 			// 处理预检请求
 			if r.Method == http.MethodOptions {
 				if cfg.Debug {
-					log.Printf("[CORS] Handling preflight request for %s", r.URL.Path)
+					logx.Infof("[CORS] Handling preflight request for %s", r.URL.Path)
 				}
 				w.WriteHeader(cfg.OptionsResponse)
 				return

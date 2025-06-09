@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/QuantumShiftX/golib/config"
 	"github.com/QuantumShiftX/golib/crypto"
+	"github.com/zeromicro/go-zero/core/logx"
 	"io"
 	"net/http"
 )
@@ -88,14 +89,14 @@ func decryptHTTPRequest(r *http.Request, cfg *config.CryptoConfig) error {
 	}
 
 	if cfg.Debug {
-		log.Printf("[Crypto] Original request body length: %d", len(body))
+		logx.Infof("[Crypto] Original request body length: %d", len(body))
 	}
 
 	// 检查是否为加密格式
 	if !crypto.IsEncryptedFormat(body) {
 		r.Body = io.NopCloser(bytes.NewReader(body))
 		if cfg.Debug {
-			log.Println("[Crypto] Request is not in encrypted format, keeping original")
+			logx.Infof("[Crypto] Request is not in encrypted format, keeping original")
 		}
 		return nil
 	}
@@ -113,7 +114,7 @@ func decryptHTTPRequest(r *http.Request, cfg *config.CryptoConfig) error {
 	}
 
 	if cfg.Debug {
-		log.Printf("[Crypto] Request decrypted successfully, decrypted length: %d", len(decryptedJSON))
+		logx.Infof("[Crypto] Request decrypted successfully, decrypted length: %d", len(decryptedJSON))
 	}
 
 	// 替换请求体
@@ -134,7 +135,7 @@ func encryptHTTPResponse(recorder *ResponseRecorder, w http.ResponseWriter, cfg 
 	responseData := recorder.body.Bytes()
 
 	if cfg.Debug {
-		log.Printf("[Crypto] Response data length: %d", len(responseData))
+		logx.Infof("[Crypto] Response data length: %d", len(responseData))
 	}
 
 	if len(responseData) == 0 {
@@ -155,7 +156,7 @@ func encryptHTTPResponse(recorder *ResponseRecorder, w http.ResponseWriter, cfg 
 	}
 
 	if cfg.Debug {
-		log.Println("[Crypto] Response encrypted successfully")
+		logx.Infof("[Crypto] Response encrypted successfully")
 	}
 
 	// 序列化加密响应
