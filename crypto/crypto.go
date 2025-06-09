@@ -18,7 +18,6 @@ type Encryptor interface {
 type EncryptedData struct {
 	Encrypted bool   `json:"encrypted"`
 	Data      string `json:"data"`
-	Algorithm string `json:"algorithm,omitempty"`
 	Timestamp int64  `json:"timestamp,omitempty"`
 }
 
@@ -55,7 +54,6 @@ func (s *XCryptoService) EncryptJSON(data interface{}) (*EncryptedData, error) {
 	return &EncryptedData{
 		Encrypted: true,
 		Data:      encrypted,
-		Algorithm: s.encryptor.Algorithm(),
 		Timestamp: getCurrentTimestamp(),
 	}, nil
 }
