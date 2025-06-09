@@ -12,7 +12,7 @@ type CryptoConfig struct {
 	Key         string   `json:"key,optional" yaml:"key"`
 	EnableURI   []string `json:"enable_uri,optional" yaml:"enable_uri"`
 	FailOnError bool     `json:"fail_on_error,optional" yaml:"fail_on_error"`
-	Algorithm   string   `json:"algorithm,optional" yaml:"algorithm"`
+	Algorithm   string   `json:"algorithm,optional,default=AES-GCM" yaml:"algorithm"`
 	Debug       bool     `json:"debug,optional" yaml:"debug"`
 }
 
