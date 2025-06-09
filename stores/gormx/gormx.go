@@ -2,7 +2,7 @@ package gormx
 
 import (
 	"fmt"
-	"github.com/QuantumShiftX/golib/stores/gormx/config"
+	"github.com/QuantumShiftX/golib/config"
 	"github.com/QuantumShiftX/golib/stores/gormx/database"
 	"gorm.io/driver/clickhouse"
 	"gorm.io/driver/mysql"

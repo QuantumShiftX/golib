@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"github.com/QuantumShiftX/golib/stores/gormx/config"
+	"github.com/QuantumShiftX/golib/config"
 	"gorm.io/driver/clickhouse"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"

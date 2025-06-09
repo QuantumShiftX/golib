@@ -1,7 +1,7 @@
 package gormx
 
 import (
-	"github.com/QuantumShiftX/golib/stores/gormx/config"
+	"github.com/QuantumShiftX/golib/config"
 	"github.com/zeromicro/go-zero/core/jsonx"
 	"testing"
 )
