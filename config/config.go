@@ -84,13 +84,14 @@ func (b *XConfigBuilder) WithMiddleware(middleware *MiddlewareConfig) *XConfigBu
 }
 
 // EnableCrypto 启用加密
-func (b *XConfigBuilder) EnableCrypto(key string, uris ...string) *XConfigBuilder {
+func (b *XConfigBuilder) EnableCrypto(debug bool, key string, uris ...string) *XConfigBuilder {
 	if b.config.Crypto == nil {
 		b.config.Crypto = DefaultCryptoConfig()
 	}
 	b.config.Crypto.Enable = true
 	b.config.Crypto.Key = key
 	b.config.Crypto.EnableURI = uris
+	b.config.Crypto.Debug = debug
 	return b
 }
 
