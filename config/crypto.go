@@ -11,9 +11,9 @@ type CryptoConfig struct {
 	Enable      bool     `json:"enable,optional" yaml:"enable"`
 	Key         string   `json:"key,optional" yaml:"key"`
 	EnableURI   []string `json:"enable_uri,optional" yaml:"enable_uri"`
-	FailOnError bool     `json:"fail_on_error,optional" yaml:"fail_on_error"`
+	FailOnError bool     `json:"fail_on_error,optional,default=true" yaml:"fail_on_error"`
 	Algorithm   string   `json:"algorithm,optional,default=AES-GCM" yaml:"algorithm"`
-	Debug       bool     `json:"debug,optional" yaml:"debug"`
+	Debug       bool     `json:"debug,optional,default=false" yaml:"debug"`
 }
 
 // DefaultCryptoConfig 默认加密配置
