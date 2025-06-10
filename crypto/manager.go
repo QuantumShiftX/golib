@@ -3,6 +3,7 @@ package crypto
 import (
 	"fmt"
 	"github.com/zeromicro/go-zero/core/jsonx"
+	"github.com/zeromicro/go-zero/core/logx"
 	"sync"
 )
 
@@ -151,6 +152,7 @@ func QuickDecryptString(ciphertext string) (string, error) {
 func IsEncryptedFormat(data []byte) bool {
 	var encryptedData EncryptedData
 	if err := jsonx.Unmarshal(data, &encryptedData); err != nil {
+		logx.Errorf("jsonx.Unmarshal failed: %v", err)
 		return false
 	}
 	return encryptedData.Encrypted && encryptedData.Data != ""
@@ -175,11 +177,9 @@ func EncryptRequest(data interface{}) ([]byte, error) {
 
 // DecryptRequest 解密请求数据
 func DecryptRequest(encryptedBytes []byte, target interface{}) error {
-	var requestData struct {
-		Data string `json:"data"`
-	}
+	var encryptedData EncryptedData
 
-	if err := jsonx.Unmarshal(encryptedBytes, &requestData); err != nil {
+	if err := jsonx.Unmarshal(encryptedBytes, &encryptedData); err != nil {
 		return err
 	}
 
@@ -188,10 +188,5 @@ func DecryptRequest(encryptedBytes []byte, target interface{}) error {
 		return err
 	}
 
-	encryptedData := &EncryptedData{
-		Encrypted: true,
-		Data:      requestData.Data,
-	}
-
-	return service.DecryptJSON(encryptedData, target)
+	return service.DecryptJSON(&encryptedData, target)
 }

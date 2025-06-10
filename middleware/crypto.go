@@ -87,7 +87,6 @@ func decryptHTTPRequest(r *http.Request, cfg *config.CryptoConfig) error {
 	if cfg.Debug {
 		logx.Infof("[Crypto] Original request body length: %d", len(body))
 	}
-
 	// 检查是否为加密格式
 	if !crypto.IsEncryptedFormat(body) {
 		r.Body = io.NopCloser(bytes.NewReader(body))
@@ -99,7 +98,7 @@ func decryptHTTPRequest(r *http.Request, cfg *config.CryptoConfig) error {
 
 	// 解密数据
 	var decryptedData interface{}
-	if err := crypto.DecryptRequest(body, &decryptedData); err != nil {
+	if err = crypto.DecryptRequest(body, &decryptedData); err != nil {
 		return fmt.Errorf("decrypt request data failed: %w", err)
 	}
 
