@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"github.com/sony/sonyflake"
-	"log"
+	"github.com/zeromicro/go-zero/core/logx"
 	"math/rand"
 	"net"
 	"os"
@@ -154,7 +154,7 @@ func (x *IDGenX) initFlake() {
 		// 检查flake是否成功初始化
 		if flake == nil {
 			initError = errors.New("failed to initialize sonyflake")
-			log.Printf("ERROR: %v", initError)
+			logx.Infof("ERROR: %v", initError)
 		}
 
 		// 初始化上次时间戳
@@ -163,7 +163,7 @@ func (x *IDGenX) initFlake() {
 		// 获取并设置节点ID
 		machineID, err := getMachineID()
 		if err != nil {
-			log.Printf("Warning: Failed to get machine ID: %v, using random value", err)
+			logx.Errorf("Warning: Failed to get machine ID: %v, using random value", err)
 			// 使用随机值作为备用
 			randMutex.Lock()
 			machineID = uint16(rand.New(randSource).Intn(1024))
@@ -178,7 +178,7 @@ func (x *IDGenX) initFlake() {
 				valid, err := x.isNodeIDValid(savedNodeID)
 				if err == nil && valid {
 					nodeID = savedNodeID
-					log.Printf("Restored nodeID from local file: %d", nodeID)
+					logx.Infof("Restored nodeID from local file: %d", nodeID)
 
 					// 更新Redis中的节点ID过期时间
 					go x.refreshNodeIDExpiry(savedNodeID)
@@ -187,7 +187,7 @@ func (x *IDGenX) initFlake() {
 			} else {
 				// 如果Redis不可用，直接使用保存的节点ID
 				nodeID = savedNodeID
-				log.Printf("Redis unavailable, using saved nodeID: %d", nodeID)
+				logx.Infof("Redis unavailable, using saved nodeID: %d", nodeID)
 				return
 			}
 		}
@@ -197,7 +197,7 @@ func (x *IDGenX) initFlake() {
 			allocatedNodeID, err := x.allocateNodeIDFromRedis(int64(machineID))
 			if err == nil {
 				nodeID = allocatedNodeID
-				log.Printf("Allocated nodeID from Redis: %d", nodeID)
+				logx.Infof("Allocated nodeID from Redis: %d", nodeID)
 
 				// 保存分配的节点ID到本地文件
 				saveNodeIDToFile(nodeID)
@@ -206,11 +206,11 @@ func (x *IDGenX) initFlake() {
 				go x.startNodeIDRefreshTask()
 			} else {
 				nodeID = int64(machineID) & nodeIDMask
-				log.Printf("Failed to allocate nodeID from Redis: %v, using local nodeID: %d", err, nodeID)
+				logx.Infof("Failed to allocate nodeID from Redis: %v, using local nodeID: %d", err, nodeID)
 			}
 		} else {
 			nodeID = int64(machineID) & nodeIDMask
-			log.Printf("Redis unavailable, using local nodeID: %d", nodeID)
+			logx.Infof("Redis unavailable, using local nodeID: %d", nodeID)
 		}
 	})
 }
@@ -264,18 +264,18 @@ func (x *IDGenX) refreshNodeIDExpiry(id int64) {
 	// 尝试更新过期时间，使用带超时的上下文
 	_, err := x.rdb.Expire(redisCtx, nodeKey, expiry).Result()
 	if err != nil {
-		log.Printf("Warning: Failed to refresh nodeID expiry: %v", err)
+		logx.Errorf("Warning: Failed to refresh nodeID expiry: %v", err)
 
 		// 检查错误是否是因为上下文取消导致的
 		if redisCtx.Err() != nil {
-			log.Printf("Redis operation was cancelled due to context timeout/cancellation")
+			logx.Errorf("Redis operation was cancelled due to context timeout/cancellation")
 			return
 		}
 
 		// 如果键不存在，重新设置
 		success, err := x.rdb.SetNX(redisCtx, nodeKey, 1, expiry).Result()
 		if err != nil || !success {
-			log.Printf("Error: Failed to reclaim nodeID: %v", err)
+			logx.Errorf("Error: Failed to reclaim nodeID: %v", err)
 		}
 	}
 }
@@ -294,7 +294,7 @@ func (x *IDGenX) startNodeIDRefreshTask() {
 	defer ticker.Stop()
 
 	// 记录日志
-	log.Printf("Starting node ID refresh task, will refresh every %v", tickerDuration)
+	logx.Infof("Starting node ID refresh task, will refresh every %v", tickerDuration)
 
 	// 立即执行一次刷新操作
 	x.refreshNodeIDExpiry(nodeID)
@@ -307,10 +307,10 @@ func (x *IDGenX) startNodeIDRefreshTask() {
 			refreshNodeIDLock.Lock()
 			x.refreshNodeIDExpiry(nodeID)
 			refreshNodeIDLock.Unlock()
-			log.Printf("Node ID %d refreshed successfully", nodeID)
+			logx.Infof("Node ID %d refreshed successfully", nodeID)
 		case <-refreshCtx.Done():
 			// 上下文被取消，退出循环
-			log.Printf("Node ID refresh task is shutting down")
+			logx.Infof("Node ID refresh task is shutting down")
 			return
 		}
 	}
@@ -431,7 +431,7 @@ func (x *IDGenX) getUniqueIDFromRedisSegment(idType string, digits int) (int64, 
 			segment = pendingSegment
 			// 从待用段中移除
 			delete(pendingSegments, segmentKey)
-			log.Printf("Using preloaded segment for %s", segmentKey)
+			logx.Infof("Using preloaded segment for %s", segmentKey)
 		} else {
 			// 如果没有预加载的段，从Redis获取新段
 			nextVal, err := x.rdb.Incr(ctx, segmentKey).Result()
@@ -523,7 +523,7 @@ func (x *IDGenX) preloadNextSegment(idType string, digits int) {
 	// 从Redis获取新段
 	nextVal, err := x.rdb.Incr(ctx, segmentKey).Result()
 	if err != nil {
-		log.Printf("Warning: Failed to preload next segment from Redis: %v", err)
+		logx.Errorf("Warning: Failed to preload next segment from Redis: %v", err)
 		return
 	}
 
@@ -557,7 +557,7 @@ func (x *IDGenX) preloadNextSegment(idType string, digits int) {
 	}
 	counterMutex.Unlock()
 
-	log.Printf("Successfully preloaded next segment for %s, starting at %d", segmentKey, segmentStart)
+	logx.Infof("Successfully preloaded next segment for %s, starting at %d", segmentKey, segmentStart)
 }
 
 // GenId 生成一个唯一的雪花ID (原始长整型)
@@ -588,7 +588,7 @@ func (x *IDGenX) GenId() (int64, error) {
 			return finalID, nil
 		}
 		// 如果Redis操作失败，回退到本地方式
-		log.Printf("Warning: Failed to get sequence from Redis: %v, falling back to local generation", err)
+		logx.Infof("Warning: Failed to get sequence from Redis: %v, falling back to local generation", err)
 	}
 
 	id, err := flake.NextID()
@@ -619,7 +619,7 @@ func handleClockBackward(lastTs int64, currentTs int64) int64 {
 	defer clockBackwardLock.Unlock()
 
 	if currentTs < lastTs {
-		log.Printf("Clock moved backwards. Waiting until %d.", lastTs)
+		logx.Infof("Clock moved backwards. Waiting until %d.", lastTs)
 		// 等待一段时间
 		time.Sleep(time.Duration(lastTs-currentTs+clockBackwardWaitMs) * time.Millisecond)
 		return timeGen()
@@ -690,7 +690,7 @@ func (x *IDGenX) GenIDWithDigits(digits int) (int64, error) {
 		}
 
 		// 如果Redis操作失败，记录日志并回退到本地生成
-		log.Printf("Warning: Redis segment allocation failed: %v, falling back to local ID generation", err)
+		logx.Errorf("Warning: Redis segment allocation failed: %v, falling back to local ID generation", err)
 	}
 
 	// 获取该位数对应的锁和计数器
@@ -871,7 +871,7 @@ func (x *IDGenX) GenInviteCode(userID uint64) (string, error) {
 		}
 
 		// 如果Redis操作失败，回退到本地生成
-		log.Printf("Warning: Failed to get invite code sequence from Redis: %v, falling back to local generation", err)
+		logx.Infof("Warning: Failed to get invite code sequence from Redis: %v, falling back to local generation", err)
 	}
 
 	// 本地生成邀请码（Redis不可用时的回退方案）
@@ -931,7 +931,7 @@ func getMachineID() (uint16, error) {
 		if err == nil {
 			return k8sID, nil
 		}
-		log.Printf("Warning: Failed to get machine ID from K8s: %v, falling back", err)
+		logx.Infof("Warning: Failed to get machine ID from K8s: %v, falling back", err)
 	}
 
 	// 然后检查是否在Docker环境中
@@ -941,7 +941,7 @@ func getMachineID() (uint16, error) {
 		if err == nil && containerID != "" {
 			return uint16(sum([]byte(containerID)) % 1024), nil
 		}
-		log.Printf("Warning: Failed to get container ID: %v, falling back", err)
+		logx.Infof("Warning: Failed to get container ID: %v, falling back", err)
 	}
 
 	// 最后尝试使用MAC地址
