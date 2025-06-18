@@ -46,7 +46,7 @@ type LoggingConfig struct {
 // DefaultMiddlewareConfig 默认中间件配置
 func DefaultMiddlewareConfig() *MiddlewareConfig {
 	return &MiddlewareConfig{
-		EnableCORS:     true,
+		EnableCORS:     false,
 		EnableLogging:  true,
 		EnableRecovery: true,
 		CORS: &CORSConfig{
