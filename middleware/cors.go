@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// CORSMiddleware CORS中间件（优化版）
+// CORSMiddleware CORS中间件（修复版）
 func CORSMiddleware(cfg *config.CORSConfig) Handler {
 	// 使用默认配置如果没有提供
 	if cfg == nil {
@@ -29,18 +29,25 @@ func CORSMiddleware(cfg *config.CORSConfig) Handler {
 			origin := r.Header.Get("Origin")
 
 			if cfg.Debug {
-				logx.Infof("[CORS] Method=%s, Origin=%s, Path=%s", r.Method, origin, r.URL.Path)
+				logx.Infof("[CORS] Method=%s, Origin=%s, Path=%s, Headers=%v",
+					r.Method, origin, r.URL.Path, r.Header)
 			}
 
-			// 设置CORS头部
+			// 【修复1】：总是设置基本CORS头部，而不是只在origin被允许时设置
 			setCORSHeaders(w, r, cfg, origin, originChecker,
 				allowMethodsStr, allowHeadersStr, exposeHeadersStr, maxAgeStr)
 
 			// 处理预检请求
 			if r.Method == http.MethodOptions {
 				if cfg.Debug {
-					logx.Infof("[CORS] Handling preflight request for %s", r.URL.Path)
+					logx.Infof("[CORS] Handling preflight request for %s, Origin: %s", r.URL.Path, origin)
 				}
+
+				// 【修复2】：确保预检请求也检查origin
+				if !originChecker.isAllowed(origin) && cfg.Debug {
+					logx.Errorf("[CORS] Origin not allowed: %s, Allowed origins: %v", origin, cfg.AllowOrigins)
+				}
+
 				w.WriteHeader(cfg.OptionsResponse)
 				return
 			}
@@ -112,10 +119,13 @@ func (c *originChecker) isAllowed(origin string) bool {
 	return false
 }
 
-// setCORSHeaders 设置CORS头部（优化版）
+// setCORSHeaders 设置CORS头部（修复版）
 func setCORSHeaders(w http.ResponseWriter, r *http.Request, cfg *config.CORSConfig,
 	origin string, checker *originChecker,
 	allowMethodsStr, allowHeadersStr, exposeHeadersStr, maxAgeStr string) {
+
+	// 【修复3】：总是设置基本的CORS头部，即使origin不被允许
+	// 这样可以让浏览器看到CORS头，从而给出更明确的错误信息
 
 	// 1. 设置 Access-Control-Allow-Origin
 	if checker.isAllowed(origin) {
@@ -125,14 +135,26 @@ func setCORSHeaders(w http.ResponseWriter, r *http.Request, cfg *config.CORSConf
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Add("Vary", "Origin")
 		}
+	} else {
+		// 【修复4】：即使origin不被允许，也要设置一个默认的CORS头，否则浏览器看不到任何CORS响应
+		if cfg.Debug {
+			// 在debug模式下，仍然允许请求但记录警告
+			if origin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Add("Vary", "Origin")
+			}
+		}
 	}
 
-	// 2. 设置允许的方法
+	// 2. 设置允许的方法（总是设置）
 	if allowMethodsStr != "" {
 		w.Header().Set("Access-Control-Allow-Methods", allowMethodsStr)
+	} else {
+		// 提供默认方法
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	}
 
-	// 3. 设置允许的请求头
+	// 3. 设置允许的请求头（总是设置）
 	if len(cfg.AllowHeaders) > 0 {
 		if len(cfg.AllowHeaders) == 1 && cfg.AllowHeaders[0] == "*" {
 			if reqHeaders := r.Header.Get("Access-Control-Request-Headers"); reqHeaders != "" {
@@ -143,6 +165,9 @@ func setCORSHeaders(w http.ResponseWriter, r *http.Request, cfg *config.CORSConf
 		} else {
 			w.Header().Set("Access-Control-Allow-Headers", allowHeadersStr)
 		}
+	} else {
+		// 提供默认允许的头部
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 	}
 
 	// 4. 设置暴露的响应头
@@ -158,14 +183,18 @@ func setCORSHeaders(w http.ResponseWriter, r *http.Request, cfg *config.CORSConf
 	// 6. 设置预检缓存时间
 	if cfg.MaxAge > 0 {
 		w.Header().Set("Access-Control-Max-Age", maxAgeStr)
+	} else {
+		// 提供默认的预检缓存时间
+		w.Header().Set("Access-Control-Max-Age", "86400") // 24小时
 	}
 
 	// 7. WebSocket支持
 	if cfg.AllowWebSockets {
 		if upgrade := r.Header.Get("Upgrade"); upgrade != "" {
 			additionalHeaders := "Upgrade, Connection, Sec-WebSocket-Key, Sec-WebSocket-Version, Sec-WebSocket-Protocol"
-			if allowHeadersStr != "" {
-				w.Header().Set("Access-Control-Allow-Headers", allowHeadersStr+", "+additionalHeaders)
+			currentHeaders := w.Header().Get("Access-Control-Allow-Headers")
+			if currentHeaders != "" {
+				w.Header().Set("Access-Control-Allow-Headers", currentHeaders+", "+additionalHeaders)
 			} else {
 				w.Header().Set("Access-Control-Allow-Headers", additionalHeaders)
 			}
