@@ -121,20 +121,20 @@ func (r *ResponseRecorder) IsWritten() bool {
 func CreateMiddlewareChain(cfg *config.GlobalConfig) *Chain {
 	chain := NewChain()
 
-	// 恢复中间件（最外层）
-	if cfg.Middleware != nil && cfg.Middleware.EnableRecovery {
-		chain = chain.Append(RecoveryMiddleware())
-	}
-
-	// 日志中间件
-	if cfg.Middleware != nil && cfg.Middleware.EnableLogging {
-		chain = chain.Append(LoggingMiddleware(cfg.Middleware.Logging))
-	}
-
-	// CORS中间件
-	if cfg.Middleware != nil && cfg.Middleware.EnableCORS {
-		chain = chain.Append(CORSMiddleware(cfg.Middleware.CORS))
-	}
+	//// 恢复中间件（最外层）
+	//if cfg.Middleware != nil && cfg.Middleware.EnableRecovery {
+	//	chain = chain.Append(RecoveryMiddleware())
+	//}
+	//
+	//// 日志中间件
+	//if cfg.Middleware != nil && cfg.Middleware.EnableLogging {
+	//	chain = chain.Append(LoggingMiddleware(cfg.Middleware.Logging))
+	//}
+	//
+	//// CORS中间件
+	//if cfg.Middleware != nil && cfg.Middleware.EnableCORS {
+	//	chain = chain.Append(CORSMiddleware(cfg.Middleware.CORS))
+	//}
 
 	// 加密中间件（最内层）
 	if cfg.Crypto != nil && cfg.Crypto.Enable {
