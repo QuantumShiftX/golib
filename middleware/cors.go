@@ -189,7 +189,7 @@ func setCORSHeaders(w http.ResponseWriter, r *http.Request, cfg *config.CORSConf
 	if cfg.MaxAge > 0 {
 		w.Header().Set("Access-Control-Max-Age", maxAgeStr)
 	} else {
-		w.Header().Set("Access-Control-Max-Age", "86400") // 24小时
+		w.Header().Set("Access-Control-Max-Age", "3600") // 1小时
 	}
 
 	// 7. WebSocket支持
