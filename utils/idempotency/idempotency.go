@@ -126,12 +126,12 @@ func (s *IdemService) CheckIdempotency(ctx context.Context, requestID string, da
 		return false, nil
 	}
 	defer func() {
-		if _, err := mutex.Unlock(); err != nil {
+		if _, err = mutex.Unlock(); err != nil {
 			logx.WithContext(ctx).Errorf("[CheckIdempotency] unlock failed: %+v", err)
 		}
 	}()
 
-	// 4. ⭐ 双重检查（关键步骤！）
+	// 4. 双重检查（关键步骤！）
 	exists, err = s.redisClient.Exists(ctx, key).Result()
 	if err != nil {
 		return false, fmt.Errorf("double check redis key error: %w", err)
