@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/redis/go-redis/v9"
-	"github.com/sony/sonyflake"
-	"github.com/zeromicro/go-zero/core/logx"
 	"math/rand"
 	"net"
 	"os"
@@ -15,6 +12,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/sony/sonyflake"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 const (

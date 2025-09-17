@@ -1,15 +1,16 @@
 package idempotency
 
 import (
-	"github.com/redis/go-redis/v9"
 	"sync"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // Factory 幂等性服务工厂
 type Factory struct {
 	redisClient redis.UniversalClient
-	services    map[string]*IdempotencyService
+	services    map[string]*IdemService
 	cfg         Config
 	mu          sync.RWMutex
 }
@@ -65,13 +66,13 @@ func NewFactory(cfg Config, rdb redis.UniversalClient) *Factory {
 
 	return &Factory{
 		redisClient: rdb,
-		services:    make(map[string]*IdempotencyService),
+		services:    make(map[string]*IdemService),
 		cfg:         cfg,
 	}
 }
 
 // GetService 获取指定业务的幂等性服务
-func (f *Factory) GetService(businessType string) *IdempotencyService {
+func (f *Factory) GetService(businessType string) *IdemService {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -100,7 +101,7 @@ func (f *Factory) getBusinessConfig(businessType string) BusinessConfig {
 }
 
 // Service 获取指定业务的幂等性服务(全局方法)
-func Service(businessType string) *IdempotencyService {
+func Service(businessType string) *IdemService {
 	if factory == nil {
 		panic("idempotency factory not initialized, call Must() first")
 	}

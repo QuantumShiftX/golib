@@ -2,13 +2,14 @@ package xhttp
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/QuantumShiftX/golib/gerr"
 	"github.com/QuantumShiftX/golib/xerr"
 	"github.com/zeromicro/go-zero/core/trace"
 	"github.com/zeromicro/go-zero/rest/httpx"
 	"github.com/zeromicro/x/errors"
 	"google.golang.org/grpc/status"
-	"net/http"
 )
 
 const (
