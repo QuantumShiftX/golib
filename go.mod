@@ -1,6 +1,6 @@
 module github.com/QuantumShiftX/golib
 
-go 1.23.4
+go 1.25
 
 require (
 	github.com/QuantumShiftX/farms-pkg v0.0.2-0.20250422102210-6bf16c95c280
